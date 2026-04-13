@@ -1,6 +1,5 @@
 module Api
   class ArticlesController < ApplicationController
-    skip_forgery_protection
     rescue_from ActiveRecord::RecordNotFound, with: :not_found
 
     def index

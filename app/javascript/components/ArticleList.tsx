@@ -9,22 +9,37 @@ interface Props {
 export function ArticleList({ locale }: Props) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/articles")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch articles: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         setArticles(data);
         setLoading(false);
       })
       .catch((err) => {
         console.error("Failed to fetch articles:", err);
+        setError(
+          locale === "en"
+            ? "Failed to load articles. Please try again later."
+            : "記事の読み込みに失敗しました。しばらくしてからもう一度お試しください。"
+        );
         setLoading(false);
       });
-  }, []);
+  }, [locale]);
 
   if (loading) {
     return <div className="loading">Loading articles...</div>;
+  }
+
+  if (error) {
+    return <div className="error">{error}</div>;
   }
 
   return (

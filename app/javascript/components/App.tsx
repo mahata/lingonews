@@ -8,7 +8,8 @@ function getInitialLocale(): Locale {
   const cookie = document.cookie
     .split("; ")
     .find((row) => row.startsWith("locale="));
-  return (cookie?.split("=")[1] as Locale) || "en";
+  const locale = cookie?.split("=")[1];
+  return locale === "en" || locale === "ja" ? locale : "en";
 }
 
 export function App() {

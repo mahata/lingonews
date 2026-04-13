@@ -10,25 +10,26 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_13_044640) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_13_060900) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "articles", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.datetime "published_at"
-    t.string "title_en"
-    t.string "title_ja"
+    t.datetime "published_at", null: false
+    t.string "title_en", null: false
+    t.string "title_ja", null: false
     t.datetime "updated_at", null: false
   end
 
   create_table "sentences", force: :cascade do |t|
     t.bigint "article_id", null: false
-    t.text "body_en"
-    t.text "body_ja"
+    t.text "body_en", null: false
+    t.text "body_ja", null: false
     t.datetime "created_at", null: false
-    t.integer "position"
+    t.integer "position", null: false
     t.datetime "updated_at", null: false
+    t.index ["article_id", "position"], name: "index_sentences_on_article_id_and_position", unique: true
     t.index ["article_id"], name: "index_sentences_on_article_id"
   end
 

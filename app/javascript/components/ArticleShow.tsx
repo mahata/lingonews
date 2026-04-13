@@ -14,13 +14,26 @@ export function ArticleShow({ locale }: Props) {
 
   useEffect(() => {
     fetch(`/api/articles/${id}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 404) {
+          setArticle(null);
+          setLoading(false);
+          return null;
+        }
+        if (!res.ok) {
+          throw new Error(`Failed to fetch article: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
-        setArticle(data);
+        if (data) {
+          setArticle(data);
+        }
         setLoading(false);
       })
       .catch((err) => {
         console.error("Failed to fetch article:", err);
+        setArticle(null);
         setLoading(false);
       });
   }, [id]);
@@ -56,8 +69,11 @@ export function ArticleShow({ locale }: Props) {
           <div
             key={sentence.id}
             className={`sentence-pair ${highlightedId === sentence.id ? "highlighted" : ""}`}
+            tabIndex={0}
             onMouseEnter={() => setHighlightedId(sentence.id)}
             onMouseLeave={() => setHighlightedId(null)}
+            onFocus={() => setHighlightedId(sentence.id)}
+            onBlur={() => setHighlightedId(null)}
           >
             <p className="sentence-primary">
               {primaryLang === "en" ? sentence.body_en : sentence.body_ja}
