@@ -1,0 +1,17 @@
+first_sentence:
+  article: bullet_train
+  position: 1
+  body_en: "Japan unveiled its latest bullet train line."
+  body_ja: "日本は最新の新幹線路線を発表しました。"
+
+second_sentence:
+  article: bullet_train
+  position: 2
+  body_en: "The new line uses magnetic levitation technology."
+  body_ja: "新路線は磁気浮上技術を使用しています。"
+
+deep_sea_sentence:
+  article: deep_sea
+  position: 1
+  body_en: "A team discovered three unknown species."
+  body_ja: "チームが3つの未知の種を発見しました。"

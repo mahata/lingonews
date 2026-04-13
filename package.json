@@ -1,0 +1,19 @@
+{
+  "name": "lingonews",
+  "private": true,
+  "scripts": {
+    "build": "esbuild app/javascript/application.tsx --bundle --sourcemap --format=esm --outdir=app/assets/builds --loader:.tsx=tsx --loader:.ts=ts",
+    "build:watch": "esbuild app/javascript/application.tsx --bundle --sourcemap --format=esm --outdir=app/assets/builds --loader:.tsx=tsx --loader:.ts=ts --watch"
+  },
+  "dependencies": {
+    "esbuild": "^0.28.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.14.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.2"
+  }
+}
