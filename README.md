@@ -5,7 +5,7 @@ A bilingual news reader for language learning. Read news articles in English or 
 ## Stack
 
 - **Ruby 4.0.2** + **Rails 8.1.3**
-- **PostgreSQL** database
+- **PostgreSQL** database (via Docker)
 - **React 19** + **TypeScript** frontend (bundled via esbuild / jsbundling-rails)
 
 ## Getting Started
@@ -13,16 +13,19 @@ A bilingual news reader for language learning. Read news articles in English or 
 ### Prerequisites
 
 - Ruby 4.0.2 (install via [mise](https://mise.jdx.dev/): `mise install`)
-- PostgreSQL 17+
+- Docker (for PostgreSQL)
 - Node.js 20+
 
 ### Setup
 
 ```bash
-bin/setup          # installs gems, npm packages, creates DB, migrates, seeds
-npm run build      # build the React/TypeScript frontend
-bin/rails server   # http://localhost:3000
+docker compose up -d   # start PostgreSQL
+bin/setup              # installs gems, npm packages, creates DB, migrates, seeds
+npm run build          # build the React/TypeScript frontend
+bin/rails server       # http://localhost:3000
 ```
+
+To stop the database: `docker compose down` (add `-v` to also remove data).
 
 Or use `bin/dev` to run Rails + esbuild watcher together via Foreman.
 
