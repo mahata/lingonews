@@ -45,6 +45,7 @@ async function main(): Promise<void> {
 
     const session = await client.createSession({
       onPermissionRequest: approveAll,
+      systemMessage: { content: SYSTEM_PROMPT },
     });
 
     let fullResponse = "";
@@ -80,6 +81,7 @@ async function main(): Promise<void> {
     // Validate it's parseable JSON
     const parsed = JSON.parse(jsonStr);
     if (!parsed.title_en || !parsed.title_ja || !Array.isArray(parsed.sentences)) {
+      console.error("Raw LLM response:", fullResponse);
       throw new Error("Invalid response structure: missing title_en, title_ja, or sentences");
     }
 
