@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "build": "esbuild app/javascript/application.tsx --bundle --sourcemap --format=esm --outdir=app/assets/builds --loader:.tsx=tsx --loader:.ts=ts",
-    "build:watch": "esbuild app/javascript/application.tsx --bundle --sourcemap --format=esm --outdir=app/assets/builds --loader:.tsx=tsx --loader:.ts=ts --watch"
+    "build:watch": "esbuild app/javascript/application.tsx --bundle --sourcemap --format=esm --outdir=app/assets/builds --loader:.tsx=tsx --loader:.ts=ts --watch",
+    "build:production": "esbuild app/javascript/application.tsx --bundle --minify --format=esm --outdir=app/assets/builds --loader:.tsx=tsx --loader:.ts=ts"
   },
   "dependencies": {
     "@github/copilot-sdk": "^0.2.2",

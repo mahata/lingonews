@@ -11,7 +11,8 @@ RUN npm ci
 COPY app/javascript app/javascript
 COPY tsconfig.json ./
 
-RUN npm run build
+ENV NODE_ENV=production
+RUN npm run build:production
 
 # Stage 2: Build and run Rails app
 FROM ruby:4.0.2-slim AS base
@@ -26,6 +27,9 @@ RUN apt-get update -qq && \
       libpq-dev \
       libvips \
     && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Enable jemalloc for reduced memory usage and fragmentation
+ENV LD_PRELOAD="libjemalloc.so.2"
 
 # Set production environment
 ENV RAILS_ENV="production" \
