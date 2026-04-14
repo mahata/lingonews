@@ -19,7 +19,7 @@ module News
     def call
       stdout, stderr, status = Open3.capture3(
         { "GITHUB_TOKEN" => ENV.fetch("GITHUB_TOKEN") },
-        "npx", "tsx", SCRIPT_PATH, @title,
+        "npx", "--no-install", "tsx", SCRIPT_PATH, @title,
         stdin_data: @article_text,
         chdir: Rails.root.to_s
       )

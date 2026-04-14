@@ -24,13 +24,14 @@ module News
 
     def fetch_html
       uri = URI(@url)
-      response = Net::HTTP.get_response(uri)
+
+      response = http_get(uri)
 
       # Follow redirects (up to 3)
       3.times do
         break unless response.is_a?(Net::HTTPRedirection)
         uri = URI(response["location"])
-        response = Net::HTTP.get_response(uri)
+        response = http_get(uri)
       end
 
       unless response.is_a?(Net::HTTPSuccess)
@@ -38,6 +39,14 @@ module News
       end
 
       response.body.dup.force_encoding("UTF-8")
+    rescue Net::OpenTimeout, Net::ReadTimeout => e
+      raise "Failed to fetch article: #{@url} timed out (#{e.class})"
+    end
+
+    def http_get(uri)
+      Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https", open_timeout: 10, read_timeout: 15) do |http|
+        http.get(uri.request_uri)
+      end
     end
 
     def extract_text(html)

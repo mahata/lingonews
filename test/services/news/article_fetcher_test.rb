@@ -10,7 +10,7 @@ class News::ArticleFetcherTest < ActiveSupport::TestCase
     mock_response = mock_http_success(html)
 
     text = nil
-    Net::HTTP.stub :get_response, mock_response do
+    stub_http_start(mock_response) do
       text = News::ArticleFetcher.call("https://example.com/article.html")
     end
 
@@ -27,7 +27,7 @@ class News::ArticleFetcherTest < ActiveSupport::TestCase
     mock_response = mock_http_success(html)
 
     text = nil
-    Net::HTTP.stub :get_response, mock_response do
+    stub_http_start(mock_response) do
       text = News::ArticleFetcher.call("https://example.com/empty.html")
     end
 
@@ -41,5 +41,10 @@ class News::ArticleFetcherTest < ActiveSupport::TestCase
     response.instance_variable_set(:@body, body)
     response.instance_variable_set(:@read, true)
     response
+  end
+
+  def stub_http_start(response, &block)
+    mock_http = ->(*, **) { response }
+    Net::HTTP.stub :start, mock_http, &block
   end
 end

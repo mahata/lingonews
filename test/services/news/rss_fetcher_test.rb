@@ -12,7 +12,7 @@ class News::RssFetcherTest < ActiveSupport::TestCase
   test "parses RSS feed and returns items" do
     mock_response = mock_http_success(@feed_xml)
 
-    Net::HTTP.stub :get_response, mock_response do
+    stub_http_start(mock_response) do
       items = News::RssFetcher.call(feed_url: "https://example.com/rss.xml")
 
       assert_equal 2, items.size
@@ -32,7 +32,7 @@ class News::RssFetcherTest < ActiveSupport::TestCase
 
     mock_response = mock_http_success(@feed_xml)
 
-    Net::HTTP.stub :get_response, mock_response do
+    stub_http_start(mock_response) do
       items = News::RssFetcher.call(feed_url: "https://example.com/rss.xml")
 
       assert_equal 1, items.size
@@ -47,5 +47,10 @@ class News::RssFetcherTest < ActiveSupport::TestCase
     response.instance_variable_set(:@body, body)
     response.instance_variable_set(:@read, true)
     response
+  end
+
+  def stub_http_start(response, &block)
+    mock_http = ->(*, **) { response }
+    Net::HTTP.stub :start, mock_http, &block
   end
 end
