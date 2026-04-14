@@ -6,10 +6,12 @@
     "build:watch": "esbuild app/javascript/application.tsx --bundle --sourcemap --format=esm --outdir=app/assets/builds --loader:.tsx=tsx --loader:.ts=ts --watch"
   },
   "dependencies": {
+    "@github/copilot-sdk": "^0.2.2",
     "esbuild": "^0.28.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "react-router-dom": "^7.14.0"
+    "react-router-dom": "^7.14.0",
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",

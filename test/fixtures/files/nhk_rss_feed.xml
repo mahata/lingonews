@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>NHKニュース</title>
+    <link>https://www.nhk.or.jp/news/</link>
+    <description>NHKニュース</description>
+    <item>
+      <title>東京で桜が満開 今年は例年より早い開花</title>
+      <link>https://www3.nhk.or.jp/news/html/20260414/k10014001.html</link>
+      <description>東京都内の桜が14日、満開を迎えました。</description>
+      <pubDate>Mon, 14 Apr 2026 09:00:00 +0900</pubDate>
+    </item>
+    <item>
+      <title>新しい再生可能エネルギー政策を発表</title>
+      <link>https://www3.nhk.or.jp/news/html/20260414/k10014002.html</link>
+      <description>政府は新しい再生可能エネルギー政策を発表しました。</description>
+      <pubDate>Mon, 14 Apr 2026 10:00:00 +0900</pubDate>
+    </item>
+  </channel>
+</rss>
