@@ -74,3 +74,49 @@ GITHUB_TOKEN=ghp_your_token bin/rails news:update
 ```
 
 The task is idempotent — re-running it only fetches new articles not yet in the database.
+
+## Deploying to Fly.io
+
+### Prerequisites
+
+- [flyctl CLI](https://fly.io/docs/flyctl/install/) installed and authenticated (`fly auth login`)
+
+### Initial Setup
+
+```bash
+# Create the Fly app (does not deploy yet)
+fly launch --no-deploy
+
+# Create a single-node Postgres cluster (cheapest option)
+fly postgres create --name lingonews-db --region nrt --vm-size shared-cpu-1x --volume-size 1
+
+# Attach the database (sets DATABASE_URL automatically)
+fly postgres attach lingonews-db
+
+# Set the Rails master key
+fly secrets set RAILS_MASTER_KEY=$(cat config/master.key)
+```
+
+### Deploy
+
+```bash
+fly deploy
+```
+
+### Useful Commands
+
+```bash
+fly status              # check app status
+fly logs                # stream logs
+fly ssh console         # SSH into the running machine
+fly ssh console -C "/rails/bin/rails console"  # Rails console
+fly postgres connect -a lingonews-db            # psql into the database
+```
+
+### Cost Notes
+
+The app is configured for minimal cost (~$3–4/month):
+
+- **Machine**: `shared-cpu-1x` with 256MB RAM
+- **Postgres**: single-node, 1GB volume
+- **Auto-stop**: machines stop when idle and restart on incoming requests (adds ~2–5s cold start)

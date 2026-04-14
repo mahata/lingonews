@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+
+# Run database migrations / creation
+./bin/rails db:prepare
+
+exec "${@}"

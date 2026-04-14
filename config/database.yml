@@ -57,6 +57,4 @@ test:
 #
 production:
   <<: *default
-  database: lingonews_production
-  username: lingonews
-  password: <%= ENV["LINGONEWS_DATABASE_PASSWORD"] %>
+  url: <%= ENV["DATABASE_URL"] %>

@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Node
+node_modules
+
+# Logs and temp
+log/*
+tmp/*
+
+# Storage
+storage/*
+
+# Dev/test
+test/
+.github/
+compose.yml
+Procfile.dev
+
+# Editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
