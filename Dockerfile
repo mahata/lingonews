@@ -20,6 +20,7 @@ FROM ruby:4.0.2-slim AS gem-build
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
       build-essential \
+      libyaml-dev \
       libpq-dev \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
