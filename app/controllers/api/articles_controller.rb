@@ -4,16 +4,16 @@ module Api
 
     def index
       articles = Article.order(published_at: :desc)
-      render json: articles.as_json(only: [:id, :title_en, :title_ja, :published_at])
+      render json: articles.as_json(only: [ :id, :title_en, :title_ja, :published_at ])
     end
 
     def show
       article = Article.includes(:sentences).find(params[:id])
       render json: article.as_json(
-        only: [:id, :title_en, :title_ja, :published_at],
+        only: [ :id, :title_en, :title_ja, :published_at ],
         include: {
           sentences: {
-            only: [:id, :position, :body_en, :body_ja]
+            only: [ :id, :position, :body_en, :body_ja ]
           }
         }
       )

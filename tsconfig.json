@@ -13,11 +13,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./app/assets/builds",
-    "rootDir": "./app/javascript",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["app/javascript/*"]
-    }
+    "rootDir": "./app/javascript"
   },
   "include": ["app/javascript/**/*.ts", "app/javascript/**/*.tsx"],
   "exclude": ["node_modules", "app/assets/builds"]
