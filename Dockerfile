@@ -14,19 +14,39 @@ COPY tsconfig.json ./
 ENV NODE_ENV=production
 RUN npm run build:production
 
-# Stage 2: Build and run Rails app
+# Stage 2: Build gems with native extensions
+FROM ruby:4.0.2-slim AS gem-build
+
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+      build-essential \
+      libpq-dev \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+ENV RAILS_ENV="production" \
+    BUNDLE_DEPLOYMENT="1" \
+    BUNDLE_PATH="/usr/local/bundle" \
+    BUNDLE_WITHOUT="development:test"
+
+WORKDIR /rails
+
+COPY Gemfile Gemfile.lock ./
+RUN bundle install && \
+    rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git
+
+# Stage 3: Runtime image
 FROM ruby:4.0.2-slim AS base
 
 WORKDIR /rails
 
-# Install base packages
+# Install only runtime packages
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
       curl \
       libjemalloc2 \
       libpq-dev \
       libvips \
-    && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # Enable jemalloc for reduced memory usage and fragmentation
 ENV LD_PRELOAD="libjemalloc.so.2"
@@ -37,10 +57,8 @@ ENV RAILS_ENV="production" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development:test"
 
-# Install gems
-COPY Gemfile Gemfile.lock ./
-RUN bundle install && \
-    rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git
+# Copy compiled gems from build stage
+COPY --from=gem-build /usr/local/bundle /usr/local/bundle
 
 # Copy application code
 COPY . .
