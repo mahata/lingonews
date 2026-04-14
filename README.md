@@ -44,5 +44,33 @@ bin/rails test
 
 ## Data Model
 
-- **Article** — `title_en`, `title_ja`, `published_at`
+- **Article** — `title_en`, `title_ja`, `published_at`, `source_url`
 - **Sentence** — belongs to Article, ordered by `position`, with `body_en` and `body_ja`
+
+## Updating News
+
+LingoNews can automatically fetch real articles from NHK News Web, summarize them into bilingual sentence pairs using the [GitHub Copilot SDK](https://github.com/github/copilot-sdk), and store them in the database.
+
+### Prerequisites
+
+- A **GitHub Personal Access Token** with a Copilot subscription (set as `GITHUB_TOKEN`)
+- The Copilot CLI is bundled automatically by the SDK — no separate install needed
+
+### How it works
+
+```
+NHK RSS Feed → Fetch full article HTML → Copilot SDK (bilingual summarize) → Database
+```
+
+1. **`News::RssFetcher`** parses the NHK RSS feed and skips articles already in the database (via `source_url`)
+2. **`News::ArticleFetcher`** downloads each article's HTML and extracts the text using Nokogiri
+3. **`News::ArticleSummarizer`** calls `script/summarize_article.ts` — a Node.js script that uses `@github/copilot-sdk` to produce bilingual sentence pairs (the number of sentences is determined by the article's length)
+4. **`News::Updater`** orchestrates the pipeline and saves `Article` + `Sentence` records
+
+### Usage
+
+```bash
+GITHUB_TOKEN=ghp_your_token bin/rails news:update
+```
+
+The task is idempotent — re-running it only fetches new articles not yet in the database.
