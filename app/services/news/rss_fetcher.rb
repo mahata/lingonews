@@ -27,6 +27,13 @@ module News
       uri = URI(@feed_url)
       response = Net::HTTP.get_response(uri)
 
+      # Follow redirects (up to 3)
+      3.times do
+        break unless response.is_a?(Net::HTTPRedirection)
+        uri = URI(response["location"])
+        response = Net::HTTP.get_response(uri)
+      end
+
       unless response.is_a?(Net::HTTPSuccess)
         raise "Failed to fetch RSS feed: HTTP #{response.code}"
       end
