@@ -61,11 +61,17 @@ ENV RAILS_ENV="production" \
 # Copy compiled gems from build stage
 COPY --from=gem-build /usr/local/bundle /usr/local/bundle
 
+# Copy node/npm from node stage (needed by jsbundling-rails during precompile)
+COPY --from=node-build /usr/local/bin/node /usr/local/bin/node
+COPY --from=node-build /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm
+
 # Copy application code
 COPY . .
 
-# Copy JS build artifacts from node stage
+# Copy JS build artifacts and node_modules from node stage
 COPY --from=node-build /app/app/assets/builds app/assets/builds
+COPY --from=node-build /app/node_modules node_modules
 
 # Precompile assets (bootsnap + propshaft)
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
