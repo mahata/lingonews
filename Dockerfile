@@ -21,7 +21,7 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
       build-essential \
       libpq-dev \
-    && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
@@ -46,7 +46,7 @@ RUN apt-get update -qq && \
       libjemalloc2 \
       libpq-dev \
       libvips \
-    && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # Enable jemalloc for reduced memory usage and fragmentation
 ENV LD_PRELOAD="libjemalloc.so.2"
