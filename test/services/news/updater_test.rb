@@ -5,7 +5,7 @@ require "minitest/mock"
 
 class News::UpdaterTest < ActiveSupport::TestCase
   setup do
-    @test_source = News::Sources::SOURCE.new(name: "Test Source", url: "https://example.com/rss.xml")
+    @test_source = News::Sources::Source.new(name: "Test Source", url: "https://example.com/rss.xml")
   end
 
   test "creates articles and sentences from RSS feed" do
@@ -102,8 +102,8 @@ class News::UpdaterTest < ActiveSupport::TestCase
   end
 
   test "processes multiple sources" do
-    source_a = News::Sources::SOURCE.new(name: "Source A", url: "https://example.com/a.xml")
-    source_b = News::Sources::SOURCE.new(name: "Source B", url: "https://example.com/b.xml")
+    source_a = News::Sources::Source.new(name: "Source A", url: "https://example.com/a.xml")
+    source_b = News::Sources::Source.new(name: "Source B", url: "https://example.com/b.xml")
 
     items_a = [ { title: "Article A", url: "https://example.com/a1", published_at: Time.current } ]
     items_b = [ { title: "Article B", url: "https://example.com/b1", published_at: Time.current } ]

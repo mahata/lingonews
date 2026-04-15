@@ -2,7 +2,7 @@
 
 module News
   module Sources
-    SOURCE = Struct.new(:name, :url, keyword_init: true).freeze
+    Source = Struct.new(:name, :url, keyword_init: true).freeze
 
     def self.all
       @all ||= load_sources
@@ -17,7 +17,7 @@ module News
       data = YAML.safe_load_file(path)
 
       data.fetch("sources").map do |entry|
-        SOURCE.new(name: entry.fetch("name"), url: entry.fetch("url"))
+        Source.new(name: entry.fetch("name"), url: entry.fetch("url")).freeze
       end.freeze
     end
     private_class_method :load_sources
