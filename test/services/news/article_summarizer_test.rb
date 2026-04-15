@@ -48,13 +48,71 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
     end
   end
 
-  test "raises error for invalid JSON output" do
+  test "raises error for invalid JSON output after exhausting retries" do
     mock_status = Data.define(:success?, :exitstatus).new("success?": true, exitstatus: 0)
 
-    Open3.stub :capture3, [ "not json", "", mock_status ] do
+    call_count = 0
+    mock_capture3 = ->(*_args, **_opts) {
+      call_count += 1
+      [ "not json", "", mock_status ]
+    }
+
+    Open3.stub :capture3, mock_capture3 do
       assert_raises(JSON::ParserError) do
         News::ArticleSummarizer.call(title: "Test", article_text: "Test text")
       end
     end
+
+    assert_equal 3, call_count, "Expected 1 initial attempt + 2 retries = 3 total calls"
+  end
+
+  test "retries on JSON parse error and succeeds on subsequent attempt" do
+    mock_status = Data.define(:success?, :exitstatus).new("success?": true, exitstatus: 0)
+
+    valid_output = {
+      title_en: "Test Title",
+      title_ja: "テストタイトル",
+      sentences: [
+        { body_en: "Test sentence.", body_ja: "テスト文。" }
+      ]
+    }.to_json
+
+    call_count = 0
+    mock_capture3 = ->(*_args, **_opts) {
+      call_count += 1
+      if call_count == 1
+        [ "not json {broken", "", mock_status ]
+      else
+        [ valid_output, "", mock_status ]
+      end
+    }
+
+    result = nil
+    Open3.stub :capture3, mock_capture3 do
+      result = News::ArticleSummarizer.call(title: "Test", article_text: "Test text")
+    end
+
+    assert_equal 2, call_count, "Expected 1 failed attempt + 1 successful retry"
+    assert_equal "Test Title", result[:title_en]
+    assert_equal "テストタイトル", result[:title_ja]
+    assert_equal 1, result[:sentences].size
+  end
+
+  test "does not retry on non-JSON errors" do
+    mock_status = Data.define(:success?, :exitstatus).new("success?": false, exitstatus: 1)
+
+    call_count = 0
+    mock_capture3 = ->(*_args, **_opts) {
+      call_count += 1
+      [ "", "Something went wrong", mock_status ]
+    }
+
+    Open3.stub :capture3, mock_capture3 do
+      assert_raises(RuntimeError) do
+        News::ArticleSummarizer.call(title: "Test", article_text: "Test text")
+      end
+    end
+
+    assert_equal 1, call_count, "Should not retry on non-JSON errors"
   end
 end
