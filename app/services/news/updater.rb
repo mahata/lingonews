@@ -17,10 +17,17 @@ module News
 
       puts "Found #{items.size} new article(s) to process."
 
+      errors = []
       items.each_with_index do |item, index|
         process_item(item, index + 1, items.size)
       rescue => e
         puts "  ERROR: #{e.message}"
+        errors << { title: item[:title], error: e.message }
+      end
+
+      if errors.any?
+        raise "#{errors.size} article(s) failed to process:\n" +
+              errors.map { |e| "  - #{e[:title]}: #{e[:error]}" }.join("\n")
       end
     end
 
