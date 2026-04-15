@@ -1,0 +1,19 @@
+name: News Update
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  update:
+    name: Update news
+    runs-on: ubuntu-latest
+    concurrency: news-update
+    steps:
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Run news:update on production
+        run: flyctl ssh console -C "bin/rails news:update"
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
