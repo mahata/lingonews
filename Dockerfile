@@ -64,7 +64,8 @@ COPY --from=gem-build /usr/local/bundle /usr/local/bundle
 # Copy Node.js runtime from build stage (needed for jsbundling-rails asset precompilation)
 COPY --from=node-build /usr/local/bin/node /usr/local/bin/node
 COPY --from=node-build /usr/local/lib/node_modules /usr/local/lib/node_modules
-RUN ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm
+RUN ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
+    ln -sf ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 # Copy application code
 COPY . .
