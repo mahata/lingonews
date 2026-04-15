@@ -49,3 +49,5 @@ end
 gem "jsbundling-rails", "~> 1.3"
 
 gem "rss"
+
+gem "dockerfile-rails", ">= 1.7", group: :development
