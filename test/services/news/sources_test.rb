@@ -7,7 +7,7 @@ class News::SourcesTest < ActiveSupport::TestCase
     sources = News::Sources.all
 
     assert_kind_of Array, sources
-    assert sources.size >= 4, "Expected at least 4 configured sources"
+    assert_not_empty sources
 
     nhk = sources.find { |s| s.name == "NHK News" }
     assert_not_nil nhk

@@ -10,7 +10,7 @@ namespace :news do
 
     sources = News::Sources.all
     puts "Starting news update for #{sources.size} source(s)..."
-    News::Updater.call
+    News::Updater.call(sources: sources)
     puts "Done."
   end
 end

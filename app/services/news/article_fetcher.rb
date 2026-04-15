@@ -46,16 +46,26 @@ module News
     def encode_body(response)
       body = response.body.dup
       charset = extract_charset(response)
+      encoding = find_encoding(charset)
 
-      if charset
-        body.force_encoding(charset)
+      if encoding
+        body.force_encoding(encoding)
       else
         # Let Nokogiri detect encoding from <meta> tags
         detected = Nokogiri::HTML(body).encoding
-        body.force_encoding(detected) if detected
+        detected_encoding = find_encoding(detected)
+        body.force_encoding(detected_encoding) if detected_encoding
       end
 
       body.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+    end
+
+    def find_encoding(charset)
+      return nil if charset.nil? || charset.empty?
+
+      Encoding.find(charset)
+    rescue ArgumentError
+      nil
     end
 
     def extract_charset(response)
