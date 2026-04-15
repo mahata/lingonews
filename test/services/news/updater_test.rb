@@ -85,12 +85,12 @@ class News::UpdaterTest < ActiveSupport::TestCase
     News::RssFetcher.stub :call, rss_items do
       News::ArticleFetcher.stub :call, article_fetcher do
         News::ArticleSummarizer.stub :call, summary do
+          initial_count = Article.count
           error = assert_raises(RuntimeError) do
-            assert_difference "Article.count", 1 do
-              News::Updater.call
-            end
+            News::Updater.call
           end
           assert_match(/1 article\(s\) failed/, error.message)
+          assert_equal initial_count + 1, Article.count
         end
       end
     end
