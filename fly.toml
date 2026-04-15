@@ -1,11 +1,17 @@
+# fly.toml app configuration file generated for lingonews on 2026-04-14T15:46:00+09:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
 app = 'lingonews'
 primary_region = 'nrt'
+console_command = '/rails/bin/rails console'
 
 [build]
 
 [env]
-  RAILS_SERVE_STATIC_FILES = 'true'
   RAILS_LOG_TO_STDOUT = 'true'
+  RAILS_SERVE_STATIC_FILES = 'true'
 
 [http_service]
   internal_port = 3000
@@ -19,12 +25,24 @@ primary_region = 'nrt'
     hard_limit = 25
     soft_limit = 20
 
-[[http_service.checks]]
-  grace_period = '30s'
-  interval = '30s'
-  method = 'GET'
-  timeout = '5s'
-  path = '/up'
+  [[http_service.checks]]
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '30s'
+    method = 'GET'
+    path = '/up'
+
+  [[http_service.checks]]
+    interval = '10s'
+    timeout = '2s'
+    grace_period = '5s'
+    method = 'GET'
+    path = '/up'
+    protocol = 'http'
+    tls_skip_verify = false
+
+    [http_service.checks.headers]
+      X-Forwarded-Proto = 'https'
 
 [[vm]]
   size = 'shared-cpu-1x'
