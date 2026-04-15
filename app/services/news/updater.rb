@@ -21,7 +21,7 @@ module News
       items.each_with_index do |item, index|
         process_item(item, index + 1, items.size)
       rescue => e
-        puts "  ERROR: #{e.class}: #{e.message}"
+        puts "  ERROR:\n#{e.full_message(highlight: false)}"
         errors << { title: item[:title], error: "#{e.class}: #{e.message}" }
       end
 
