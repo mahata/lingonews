@@ -11,9 +11,13 @@ module News
       new(title:, article_text:).call
     end
 
+    # Fullwidth quotation marks that LLMs tend to echo back as ASCII
+    # double-quotes, breaking JSON output.
+    PROBLEMATIC_QUOTES = /[\u201C\u201D\u301D\u301E\uFF02]/
+
     def initialize(title:, article_text:)
-      @title = title
-      @article_text = article_text
+      @title = sanitize_text(title)
+      @article_text = sanitize_text(article_text)
     end
 
     MAX_RETRIES = 2
@@ -45,6 +49,10 @@ module News
     end
 
     private
+
+    def sanitize_text(text)
+      text.gsub(PROBLEMATIC_QUOTES, "")
+    end
 
     def json_error?(error)
       return true if error.is_a?(JSON::ParserError)

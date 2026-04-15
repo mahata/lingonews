@@ -149,6 +149,42 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
     assert_equal 3, call_count, "Expected 1 initial attempt + 2 retries = 3 total calls"
   end
 
+  test "strips all problematic quotation marks from title and article text" do
+    mock_output = {
+      title_en: "NATO Ambassadors Visit Japan",
+      title_ja: "NATO加盟の30か国の大使らが来日 異例の規模の訪問団",
+      sentences: [
+        { body_en: "Ambassadors from 30 NATO countries arrived in Japan.", body_ja: "NATO加盟30か国の大使らが来日しました。" }
+      ]
+    }.to_json
+
+    mock_status = Data.define(:success?, :exitstatus).new("success?": true, exitstatus: 0)
+
+    captured_title = nil
+    captured_stdin = nil
+    mock_capture3 = ->(*args, **opts) {
+      captured_title = args.last
+      captured_stdin = opts[:stdin_data]
+      [ mock_output, "", mock_status ]
+    }
+
+    # Title uses U+201C and U+201D (left/right double quotation marks)
+    # Article text uses all five: U+201C, U+201D, U+301D, U+301E, U+FF02
+    Open3.stub :capture3, mock_capture3 do
+      News::ArticleSummarizer.call(
+        title: "NATO加盟の30か国の大使らが来日 \u201C異例の規模\u201Dの訪問団",
+        article_text: "\u201Cａ\u201Dｂ\u301Dｃ\u301Eｄ\uFF02ｅ"
+      )
+    end
+
+    refute_match(/[\u201C\u201D\u301D\u301E\uFF02]/, captured_title,
+      "All problematic quotes should be stripped from title")
+    refute_match(/[\u201C\u201D\u301D\u301E\uFF02]/, captured_stdin,
+      "All problematic quotes should be stripped from article text")
+    assert_equal "NATO加盟の30か国の大使らが来日 異例の規模の訪問団", captured_title
+    assert_equal "ａｂｃｄｅ", captured_stdin
+  end
+
   test "does not retry on non-JSON errors" do
     mock_status = Data.define(:success?, :exitstatus).new("success?": false, exitstatus: 1)
 
