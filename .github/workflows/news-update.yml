@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     concurrency: news-update
     steps:
-      - uses: superfly/flyctl-actions/setup-flyctl@v1.5
+      - uses: superfly/flyctl-actions/setup-flyctl@1.5
 
       - name: Run news:update on production
         run: flyctl ssh console -a lingonews -C "bin/rails news:update"
