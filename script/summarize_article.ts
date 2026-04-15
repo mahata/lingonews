@@ -17,7 +17,8 @@ Rules:
 - Each sentence pair should capture a key point from the article
 - English sentences should be natural, not literal translations
 - Japanese sentences should preserve the original meaning faithfully
-- Output ONLY the JSON object, no markdown fences, no extra text`;
+- Output ONLY the JSON object, no markdown fences, no extra text
+- Ensure the output is valid, parseable JSON. Double-check that all strings are properly escaped and all brackets are closed.`;
 
 async function main(): Promise<void> {
   const title = process.argv[2];
