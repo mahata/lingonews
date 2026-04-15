@@ -38,9 +38,32 @@ module News
         raise "Failed to fetch article: HTTP #{response.code} for #{@url}"
       end
 
-      response.body.dup.force_encoding("UTF-8")
+      encode_body(response)
     rescue Net::OpenTimeout, Net::ReadTimeout => e
       raise "Failed to fetch article: #{@url} timed out (#{e.class})"
+    end
+
+    def encode_body(response)
+      body = response.body.dup
+      charset = extract_charset(response)
+
+      if charset
+        body.force_encoding(charset)
+      else
+        # Let Nokogiri detect encoding from <meta> tags
+        detected = Nokogiri::HTML(body).encoding
+        body.force_encoding(detected) if detected
+      end
+
+      body.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+    end
+
+    def extract_charset(response)
+      content_type = response["content-type"]
+      return nil unless content_type
+
+      match = content_type.match(/charset=["']?([^\s;"']+)/i)
+      match&.[](1)
     end
 
     def http_get(uri)

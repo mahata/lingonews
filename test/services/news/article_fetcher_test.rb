@@ -34,12 +34,59 @@ class News::ArticleFetcherTest < ActiveSupport::TestCase
     assert_equal "", text
   end
 
+  test "correctly transcodes Shift_JIS body when charset is in Content-Type header" do
+    sjis_body = file_fixture("itmedia_article_sjis.html").binread
+    mock_response = mock_http_success(sjis_body, content_type: "text/html; charset=Shift_JIS")
+
+    text = nil
+    stub_http_start(mock_response) do
+      text = News::ArticleFetcher.call("https://example.com/itmedia.html")
+    end
+
+    assert text.encoding == Encoding::UTF_8
+    assert text.valid_encoding?
+    assert_includes text, "ITmediaのテスト記事です"
+    assert_includes text, "テスト記事タイトル"
+  end
+
+  test "detects encoding from meta tag when Content-Type has no charset" do
+    sjis_body = file_fixture("itmedia_article_sjis.html").binread
+    mock_response = mock_http_success(sjis_body, content_type: "text/html")
+
+    text = nil
+    stub_http_start(mock_response) do
+      text = News::ArticleFetcher.call("https://example.com/itmedia.html")
+    end
+
+    assert text.encoding == Encoding::UTF_8
+    assert text.valid_encoding?
+    assert_includes text, "ITmediaのテスト記事です"
+  end
+
+  test "replaces invalid bytes instead of raising" do
+    # Create a body with invalid UTF-8 bytes mixed in
+    bad_body = "<!DOCTYPE html><html><body><article><p>Hello \xFF\xFE World</p></article></body></html>"
+    bad_body.force_encoding("ASCII-8BIT")
+    mock_response = mock_http_success(bad_body, content_type: "text/html; charset=UTF-8")
+
+    text = nil
+    stub_http_start(mock_response) do
+      text = News::ArticleFetcher.call("https://example.com/bad.html")
+    end
+
+    assert text.encoding == Encoding::UTF_8
+    assert text.valid_encoding?
+    assert_includes text, "Hello"
+    assert_includes text, "World"
+  end
+
   private
 
-  def mock_http_success(body)
+  def mock_http_success(body, content_type: "text/html; charset=UTF-8")
     response = Net::HTTPSuccess.allocate
     response.instance_variable_set(:@body, body)
     response.instance_variable_set(:@read, true)
+    response.instance_variable_set(:@header, { "content-type" => [ content_type ] })
     response
   end
 

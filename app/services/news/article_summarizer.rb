@@ -16,19 +16,32 @@ module News
       @article_text = article_text
     end
 
+    MAX_RETRIES = 2
+
     def call
-      stdout, stderr, status = Open3.capture3(
-        { "GITHUB_TOKEN" => ENV.fetch("GITHUB_TOKEN") },
-        "npx", "--no-install", "tsx", SCRIPT_PATH, @title,
-        stdin_data: @article_text,
-        chdir: Rails.root.to_s
-      )
+      attempts = 0
 
-      unless status.success?
-        raise "Summarizer script failed (exit #{status.exitstatus}): #{stderr}"
+      begin
+        attempts += 1
+        stdout, stderr, status = Open3.capture3(
+          { "GITHUB_TOKEN" => ENV.fetch("GITHUB_TOKEN") },
+          "npx", "--no-install", "tsx", SCRIPT_PATH, @title,
+          stdin_data: @article_text,
+          chdir: Rails.root.to_s
+        )
+
+        unless status.success?
+          raise "Summarizer script failed (exit #{status.exitstatus}): #{stderr}"
+        end
+
+        parse_output(stdout)
+      rescue JSON::ParserError => e
+        if attempts <= MAX_RETRIES
+          puts "  WARNING: JSON parse failed (attempt #{attempts}/#{MAX_RETRIES + 1}), retrying... (#{e.message})"
+          retry
+        end
+        raise
       end
-
-      parse_output(stdout)
     end
 
     private
