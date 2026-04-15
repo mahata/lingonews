@@ -4,6 +4,10 @@ require "test_helper"
 require "minitest/mock"
 
 class News::UpdaterTest < ActiveSupport::TestCase
+  setup do
+    @test_source = News::Sources::Source.new(name: "Test Source", url: "https://example.com/rss.xml")
+  end
+
   test "creates articles and sentences from RSS feed" do
     rss_items = [
       {
@@ -29,7 +33,7 @@ class News::UpdaterTest < ActiveSupport::TestCase
         News::ArticleSummarizer.stub :call, summary do
           assert_difference "Article.count", 1 do
             assert_difference "Sentence.count", 2 do
-              News::Updater.call
+              News::Updater.call(sources: [ @test_source ])
             end
           end
         end
@@ -40,6 +44,7 @@ class News::UpdaterTest < ActiveSupport::TestCase
     assert_not_nil article
     assert_equal "Cherry Blossoms in Full Bloom in Tokyo", article.title_en
     assert_equal "東京で桜が満開", article.title_ja
+    assert_equal "Test Source", article.source
     assert_equal 2, article.sentences.count
     assert_equal "Cherry blossoms reached full bloom.", article.sentences.first.body_en
   end
@@ -52,7 +57,7 @@ class News::UpdaterTest < ActiveSupport::TestCase
     News::RssFetcher.stub :call, rss_items do
       News::ArticleFetcher.stub :call, "" do
         assert_no_difference "Article.count" do
-          News::Updater.call
+          News::Updater.call(sources: [ @test_source ])
         end
       end
     end
@@ -87,12 +92,50 @@ class News::UpdaterTest < ActiveSupport::TestCase
         News::ArticleSummarizer.stub :call, summary do
           initial_count = Article.count
           error = assert_raises(RuntimeError) do
-            News::Updater.call
+            News::Updater.call(sources: [ @test_source ])
           end
           assert_match(/1 article\(s\) failed/, error.message)
           assert_equal initial_count + 1, Article.count
         end
       end
     end
+  end
+
+  test "processes multiple sources" do
+    source_a = News::Sources::Source.new(name: "Source A", url: "https://example.com/a.xml")
+    source_b = News::Sources::Source.new(name: "Source B", url: "https://example.com/b.xml")
+
+    items_a = [ { title: "Article A", url: "https://example.com/a1", published_at: Time.current } ]
+    items_b = [ { title: "Article B", url: "https://example.com/b1", published_at: Time.current } ]
+
+    fetcher_calls = []
+    rss_fetcher = ->(feed_url:) {
+      fetcher_calls << feed_url
+      feed_url.include?("/a.xml") ? items_a : items_b
+    }
+
+    summary = {
+      title_en: "Summary",
+      title_ja: "要約",
+      sentences: [ { body_en: "Text.", body_ja: "テキスト。" } ]
+    }
+
+    News::RssFetcher.stub :call, rss_fetcher do
+      News::ArticleFetcher.stub :call, "Some text" do
+        News::ArticleSummarizer.stub :call, summary do
+          assert_difference "Article.count", 2 do
+            News::Updater.call(sources: [ source_a, source_b ])
+          end
+        end
+      end
+    end
+
+    assert_includes fetcher_calls, "https://example.com/a.xml"
+    assert_includes fetcher_calls, "https://example.com/b.xml"
+
+    article_a = Article.find_by(source_url: "https://example.com/a1")
+    article_b = Article.find_by(source_url: "https://example.com/b1")
+    assert_equal "Source A", article_a.source
+    assert_equal "Source B", article_b.source
   end
 end

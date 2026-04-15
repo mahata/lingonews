@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns="http://purl.org/rss/1.0/"
+  xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel rdf:about="https://pc.watch.impress.co.jp/">
+    <title>PC Watch</title>
+    <link>https://pc.watch.impress.co.jp/</link>
+    <description>PC Watch</description>
+  </channel>
+  <item rdf:about="https://pc.watch.impress.co.jp/docs/news/1001.html">
+    <title>新型プロセッサが発表される</title>
+    <link>https://pc.watch.impress.co.jp/docs/news/1001.html</link>
+    <dc:date>2026-04-14T09:00:00+09:00</dc:date>
+  </item>
+  <item rdf:about="https://pc.watch.impress.co.jp/docs/news/1002.html">
+    <title>メモリ価格が下落傾向に</title>
+    <link>https://pc.watch.impress.co.jp/docs/news/1002.html</link>
+    <dc:date>2026-04-14T10:00:00+09:00</dc:date>
+  </item>
+</rdf:RDF>

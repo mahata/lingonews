@@ -55,10 +55,19 @@ module News
 
       feed.items.map do |item|
         {
-          title: item.title,
-          url: item.link,
-          published_at: item.pubDate
+          title: item.title.to_s.strip,
+          url: item.link.to_s.strip,
+          published_at: extract_published_at(item)
         }
+      end
+    end
+
+    # RSS 2.0 uses pubDate; RSS 1.0/RDF uses dc:date
+    def extract_published_at(item)
+      if item.respond_to?(:pubDate) && item.pubDate
+        item.pubDate
+      elsif item.respond_to?(:dc_date) && item.dc_date
+        item.dc_date
       end
     end
 

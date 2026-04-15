@@ -7,9 +7,10 @@ require "minitest/mock"
 class News::RssFetcherTest < ActiveSupport::TestCase
   setup do
     @feed_xml = file_fixture("nhk_rss_feed.xml").read
+    @rdf_xml = file_fixture("rdf_feed.xml").read
   end
 
-  test "parses RSS feed and returns items" do
+  test "parses RSS 2.0 feed and returns items" do
     mock_response = mock_http_success(@feed_xml)
 
     stub_http_start(mock_response) do
@@ -18,6 +19,19 @@ class News::RssFetcherTest < ActiveSupport::TestCase
       assert_equal 2, items.size
       assert_equal "東京で桜が満開 今年は例年より早い開花", items[0][:title]
       assert_equal "https://www3.nhk.or.jp/news/html/20260414/k10014001.html", items[0][:url]
+      assert_not_nil items[0][:published_at]
+    end
+  end
+
+  test "parses RSS 1.0/RDF feed and returns items with dc:date" do
+    mock_response = mock_http_success(@rdf_xml)
+
+    stub_http_start(mock_response) do
+      items = News::RssFetcher.call(feed_url: "https://example.com/feed.rdf")
+
+      assert_equal 2, items.size
+      assert_equal "新型プロセッサが発表される", items[0][:title]
+      assert_equal "https://pc.watch.impress.co.jp/docs/news/1001.html", items[0][:url]
       assert_not_nil items[0][:published_at]
     end
   end

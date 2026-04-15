@@ -1,0 +1,5 @@
+class AddSourceToArticles < ActiveRecord::Migration[8.1]
+  def change
+    add_column :articles, :source, :string
+  end
+end
