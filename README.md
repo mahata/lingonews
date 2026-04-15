@@ -1,3 +1,5 @@
+[![CI](https://github.com/mahata/lingonews/actions/workflows/ci.yml/badge.svg)](https://github.com/mahata/lingonews/actions/workflows/ci.yml) [![Fly Deploy](https://github.com/mahata/lingonews/actions/workflows/fly-deploy.yml/badge.svg)](https://github.com/mahata/lingonews/actions/workflows/fly-deploy.yml) [![News Update](https://github.com/mahata/lingonews/actions/workflows/news-update.yml/badge.svg)](https://github.com/mahata/lingonews/actions/workflows/news-update.yml)
+
 # LingoNews
 
 A bilingual news reader for language learning. Read news articles in English or Japanese, and hover over any sentence to reveal its translation — helping you learn a language through real content.
