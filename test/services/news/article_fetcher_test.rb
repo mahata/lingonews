@@ -64,8 +64,8 @@ class News::ArticleFetcherTest < ActiveSupport::TestCase
   end
 
   test "replaces invalid bytes instead of raising" do
-    # Create a body with invalid UTF-8 bytes mixed in
-    bad_body = "<!DOCTYPE html><html><body><article><p>Hello \xFF\xFE World</p></article></body></html>"
+    # Create a body with invalid UTF-8 bytes mixed in (use +string to make it mutable with frozen_string_literal: true)
+    bad_body = +"<!DOCTYPE html><html><body><article><p>Hello \xFF\xFE World</p></article></body></html>"
     bad_body.force_encoding("ASCII-8BIT")
     mock_response = mock_http_success(bad_body, content_type: "text/html; charset=UTF-8")
 
