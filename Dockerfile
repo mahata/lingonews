@@ -21,6 +21,7 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
       build-essential \
       libpq-dev \
+      libyaml-dev \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 ENV RAILS_ENV="production" \
@@ -60,10 +61,16 @@ ENV RAILS_ENV="production" \
 # Copy compiled gems from build stage
 COPY --from=gem-build /usr/local/bundle /usr/local/bundle
 
+# Copy Node.js runtime from build stage (needed for jsbundling-rails asset precompilation)
+COPY --from=node-build /usr/local/bin/node /usr/local/bin/node
+COPY --from=node-build /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm
+
 # Copy application code
 COPY . .
 
-# Copy JS build artifacts from node stage
+# Copy node_modules and JS build artifacts from node stage
+COPY --from=node-build /app/node_modules node_modules
 COPY --from=node-build /app/app/assets/builds app/assets/builds
 
 # Precompile assets (bootsnap + propshaft)

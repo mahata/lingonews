@@ -26,24 +26,12 @@ console_command = '/rails/bin/rails console'
     soft_limit = 20
 
   [[http_service.checks]]
-    interval = '30s'
+    interval = '15s'
     timeout = '5s'
-    grace_period = '30s'
+    grace_period = '120s'
     method = 'GET'
     path = '/up'
-
-  [[http_service.checks]]
-    interval = '10s'
-    timeout = '2s'
-    grace_period = '5s'
-    method = 'GET'
-    path = '/up'
-    protocol = 'http'
-    tls_skip_verify = false
-
-    [http_service.checks.headers]
-      X-Forwarded-Proto = 'https'
 
 [[vm]]
   size = 'shared-cpu-1x'
-  memory = '256mb'
+  memory = '512mb'
