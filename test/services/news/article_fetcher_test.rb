@@ -80,6 +80,20 @@ class News::ArticleFetcherTest < ActiveSupport::TestCase
     assert_includes text, "World"
   end
 
+  test "falls back gracefully when Content-Type has unrecognized charset" do
+    html = "<html><body><article><p>Some content here</p></article></body></html>"
+    mock_response = mock_http_success(html, content_type: "text/html; charset=unicode-1-1-utf-8")
+
+    text = nil
+    stub_http_start(mock_response) do
+      text = News::ArticleFetcher.call("https://example.com/weird-charset.html")
+    end
+
+    assert text.encoding == Encoding::UTF_8
+    assert text.valid_encoding?
+    assert_includes text, "Some content here"
+  end
+
   private
 
   def mock_http_success(body, content_type: "text/html; charset=UTF-8")
