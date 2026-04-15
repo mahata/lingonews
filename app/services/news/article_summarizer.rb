@@ -35,8 +35,8 @@ module News
         end
 
         parse_output(stdout)
-      rescue JSON::ParserError => e
-        if attempts <= MAX_RETRIES
+      rescue JSON::ParserError, RuntimeError => e
+        if attempts <= MAX_RETRIES && json_error?(e)
           puts "  WARNING: JSON parse failed (attempt #{attempts}/#{MAX_RETRIES + 1}), retrying... (#{e.message})"
           retry
         end
@@ -45,6 +45,11 @@ module News
     end
 
     private
+
+    def json_error?(error)
+      return true if error.is_a?(JSON::ParserError)
+      error.message.match?(/JSON/i)
+    end
 
     def parse_output(stdout)
       data = JSON.parse(stdout)
