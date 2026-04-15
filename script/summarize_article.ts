@@ -78,6 +78,13 @@ async function main(): Promise<void> {
       jsonStr = fenceMatch[1].trim();
     }
 
+    // Strip any text outside the JSON object (e.g., LLM preamble/postamble)
+    const firstBrace = jsonStr.indexOf("{");
+    const lastBrace = jsonStr.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
+    }
+
     // Validate it's parseable JSON
     const parsed = JSON.parse(jsonStr);
     if (!parsed.title_en || !parsed.title_ja || !Array.isArray(parsed.sentences)) {
