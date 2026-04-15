@@ -21,13 +21,13 @@ module News
       items.each_with_index do |item, index|
         process_item(item, index + 1, items.size)
       rescue => e
-        puts "  ERROR: #{e.full_message}"
+        puts "  ERROR: #{e.class}: #{e.message}"
         errors << { title: item[:title], error: "#{e.class}: #{e.message}" }
       end
 
       if errors.any?
         raise "#{errors.size} article(s) failed to process:\n" +
-              errors.map { |e| "  - #{e[:title]}: #{e[:error]}" }.join("\n")
+              errors.map { |err| "  - #{err[:title]}: #{err[:error]}" }.join("\n")
       end
     end
 

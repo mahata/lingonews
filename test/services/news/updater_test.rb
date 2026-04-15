@@ -58,7 +58,7 @@ class News::UpdaterTest < ActiveSupport::TestCase
     end
   end
 
-  test "continues processing when one article fails" do
+  test "continues processing remaining articles and raises summary error when one fails" do
     rss_items = [
       { title: "Failing article", url: "https://example.com/fail", published_at: Time.current },
       { title: "Working article", url: "https://example.com/ok", published_at: Time.current }
