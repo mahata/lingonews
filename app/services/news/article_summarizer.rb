@@ -18,7 +18,7 @@ module News
     def initialize(title:, article_text:, research_context: nil)
       @title = sanitize_text(title)
       @article_text = sanitize_text(article_text)
-      @research_context = research_context
+      @research_context = research_context ? sanitize_text(research_context) : nil
     end
 
     MAX_RETRIES = 2

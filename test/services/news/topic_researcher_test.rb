@@ -1,15 +1,19 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "minitest/mock"
 
 class News::TopicResearcherTest < ActiveSupport::TestCase
   setup do
+    @original_github_token = ENV["GITHUB_TOKEN"]
     ENV["GITHUB_TOKEN"] = "test-token"
   end
 
   teardown do
-    ENV.delete("GITHUB_TOKEN")
+    if @original_github_token
+      ENV["GITHUB_TOKEN"] = @original_github_token
+    else
+      ENV.delete("GITHUB_TOKEN")
+    end
   end
 
   test "calls script and parses research context" do

@@ -46,8 +46,10 @@ async function main(): Promise<void> {
 
     let fullResponse = "";
 
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+
     const done = new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => {
+      timeout = setTimeout(() => {
         reject(new Error("Copilot SDK session timed out after 120 seconds"));
       }, 120_000);
 
@@ -63,9 +65,13 @@ async function main(): Promise<void> {
 
     const prompt = `Here is a Japanese news article. Please research this topic on the web and provide additional context.\n\nTitle: "${title}"\n\nArticle text:\n${articleText}\n\nPlease search the web for related information and produce the research context JSON.`;
 
-    await session.send({ prompt });
-    await done;
-    await session.disconnect();
+    try {
+      await session.send({ prompt });
+      await done;
+    } finally {
+      clearTimeout(timeout);
+      await session.disconnect();
+    }
 
     let jsonStr = fullResponse.trim();
     const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
