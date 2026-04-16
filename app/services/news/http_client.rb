@@ -13,7 +13,9 @@ module News
 
       MAX_REDIRECTS.times do
         break unless response.is_a?(Net::HTTPRedirection)
-        uri = URI(response["location"])
+        location = response["location"]
+        break unless location
+        uri = uri.merge(location)
         response = http_get(uri, open_timeout:, read_timeout:)
       end
 

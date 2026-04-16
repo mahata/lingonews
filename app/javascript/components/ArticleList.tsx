@@ -27,17 +27,25 @@ function Pagination({
 
   const windowSize = 2;
   const pages: (number | "ellipsis-start" | "ellipsis-end")[] = [];
+  const windowStart = Math.max(2, page - windowSize);
+  const windowEnd = Math.min(totalPages - 1, page + windowSize);
 
-  for (let i = 1; i <= totalPages; i++) {
-    if (
-      i === 1 ||
-      i === totalPages ||
-      (i >= page - windowSize && i <= page + windowSize)
-    ) {
-      pages.push(i);
-    } else if (pages.length > 0 && typeof pages[pages.length - 1] === "number") {
-      pages.push(i < page ? "ellipsis-start" : "ellipsis-end");
-    }
+  pages.push(1);
+
+  if (windowStart > 2) {
+    pages.push("ellipsis-start");
+  }
+
+  for (let i = windowStart; i <= windowEnd; i++) {
+    pages.push(i);
+  }
+
+  if (windowEnd < totalPages - 1) {
+    pages.push("ellipsis-end");
+  }
+
+  if (totalPages > 1) {
+    pages.push(totalPages);
   }
 
   return (
