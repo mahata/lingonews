@@ -1,6 +1,6 @@
 import { CopilotClient, approveAll } from "@github/copilot-sdk";
 
-const SYSTEM_PROMPT = `You are a bilingual news summarizer. You receive a Japanese news article and produce a structured bilingual (English/Japanese) summary.
+const BASE_SYSTEM_PROMPT = `You are a bilingual news summarizer. You receive a Japanese news article and produce a structured bilingual (English/Japanese) summary.
 
 Your output must be valid JSON with this exact structure:
 {
@@ -19,6 +19,10 @@ Rules:
 - Japanese sentences should preserve the original meaning faithfully
 - Output ONLY the JSON object, no markdown fences, no extra text
 - Ensure the output is valid, parseable JSON. Double-check that all strings are properly escaped and all brackets are closed.`;
+
+const RESEARCH_ADDENDUM = `
+
+Additional context from web research has been provided alongside the article. Incorporate relevant findings from the research to produce a richer, more informed summary. Prioritize the original article's content but enhance it with background, context, and related developments from the research.`;
 
 async function main(): Promise<void> {
   const title = process.argv[2];
@@ -41,12 +45,17 @@ async function main(): Promise<void> {
 
   const client = new CopilotClient();
 
+  const researchContext = process.env.RESEARCH_CONTEXT || "";
+  const systemPrompt = researchContext
+    ? BASE_SYSTEM_PROMPT + RESEARCH_ADDENDUM
+    : BASE_SYSTEM_PROMPT;
+
   try {
     await client.start();
 
     const session = await client.createSession({
       onPermissionRequest: approveAll,
-      systemMessage: { content: SYSTEM_PROMPT },
+      systemMessage: { content: systemPrompt },
     });
 
     let fullResponse = "";
@@ -66,7 +75,11 @@ async function main(): Promise<void> {
       });
     });
 
-    const prompt = `Here is a Japanese news article. Title: "${title}"\n\nArticle text:\n${articleText}\n\nPlease produce the bilingual summary JSON.`;
+    let prompt = `Here is a Japanese news article. Title: "${title}"\n\nArticle text:\n${articleText}`;
+    if (researchContext) {
+      prompt += `\n\nWeb research findings:\n${researchContext}`;
+    }
+    prompt += `\n\nPlease produce the bilingual summary JSON.`;
 
     await session.send({ prompt });
     await done;

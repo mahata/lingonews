@@ -37,6 +37,59 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
     end
   end
 
+  test "passes research context as env var when provided" do
+    mock_output = {
+      title_en: "Cherry Blossoms in Full Bloom in Tokyo",
+      title_ja: "東京で桜が満開",
+      sentences: [
+        { body_en: "Cherry blossoms reached full bloom.", body_ja: "桜が満開を迎えました。" }
+      ]
+    }.to_json
+
+    mock_status = Data.define(:success?, :exitstatus).new("success?": true, exitstatus: 0)
+
+    captured_env = nil
+    mock_capture3 = ->(*args, **opts) {
+      captured_env = args.first if args.first.is_a?(Hash)
+      [ mock_output, "", mock_status ]
+    }
+
+    Open3.stub :capture3, mock_capture3 do
+      News::ArticleSummarizer.call(
+        title: "東京で桜が満開",
+        article_text: "桜が満開を迎えました。",
+        research_context: "Additional context from web research."
+      )
+    end
+
+    assert_equal "Additional context from web research.", captured_env["RESEARCH_CONTEXT"]
+  end
+
+  test "passes empty research context env var when not provided" do
+    mock_output = {
+      title_en: "Test",
+      title_ja: "テスト",
+      sentences: [ { body_en: "Test.", body_ja: "テスト。" } ]
+    }.to_json
+
+    mock_status = Data.define(:success?, :exitstatus).new("success?": true, exitstatus: 0)
+
+    captured_env = nil
+    mock_capture3 = ->(*args, **opts) {
+      captured_env = args.first if args.first.is_a?(Hash)
+      [ mock_output, "", mock_status ]
+    }
+
+    Open3.stub :capture3, mock_capture3 do
+      News::ArticleSummarizer.call(
+        title: "Test",
+        article_text: "Test text"
+      )
+    end
+
+    assert_equal "", captured_env["RESEARCH_CONTEXT"]
+  end
+
   test "raises error when script fails" do
     mock_status = Data.define(:success?, :exitstatus).new("success?": false, exitstatus: 1)
 

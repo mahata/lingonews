@@ -30,10 +30,12 @@ class News::UpdaterTest < ActiveSupport::TestCase
 
     News::RssFetcher.stub :call, rss_items do
       News::ArticleFetcher.stub :call, article_text do
-        News::ArticleSummarizer.stub :call, summary do
-          assert_difference "Article.count", 1 do
-            assert_difference "Sentence.count", 2 do
-              News::Updater.call(sources: [ @test_source ])
+        News::TopicResearcher.stub :call, "Research context from the web." do
+          News::ArticleSummarizer.stub :call, summary do
+            assert_difference "Article.count", 1 do
+              assert_difference "Sentence.count", 2 do
+                News::Updater.call(sources: [ @test_source ])
+              end
             end
           end
         end
@@ -57,8 +59,10 @@ class News::UpdaterTest < ActiveSupport::TestCase
 
     News::RssFetcher.stub :call, rss_items do
       News::ArticleFetcher.stub :call, "" do
-        assert_no_difference "Article.count" do
-          News::Updater.call(sources: [ @test_source ])
+        News::TopicResearcher.stub :call, "Research." do
+          assert_no_difference "Article.count" do
+            News::Updater.call(sources: [ @test_source ])
+          end
         end
       end
     end
@@ -90,13 +94,15 @@ class News::UpdaterTest < ActiveSupport::TestCase
 
     News::RssFetcher.stub :call, rss_items do
       News::ArticleFetcher.stub :call, article_fetcher do
-        News::ArticleSummarizer.stub :call, summary do
-          initial_count = Article.count
-          error = assert_raises(RuntimeError) do
-            News::Updater.call(sources: [ @test_source ])
+        News::TopicResearcher.stub :call, "Research." do
+          News::ArticleSummarizer.stub :call, summary do
+            initial_count = Article.count
+            error = assert_raises(RuntimeError) do
+              News::Updater.call(sources: [ @test_source ])
+            end
+            assert_match(/1 article\(s\) failed/, error.message)
+            assert_equal initial_count + 1, Article.count
           end
-          assert_match(/1 article\(s\) failed/, error.message)
-          assert_equal initial_count + 1, Article.count
         end
       end
     end
@@ -123,9 +129,11 @@ class News::UpdaterTest < ActiveSupport::TestCase
 
     News::RssFetcher.stub :call, rss_fetcher do
       News::ArticleFetcher.stub :call, "Some text" do
-        News::ArticleSummarizer.stub :call, summary do
-          assert_difference "Article.count", 2 do
-            News::Updater.call(sources: [ source_a, source_b ])
+        News::TopicResearcher.stub :call, "Research." do
+          News::ArticleSummarizer.stub :call, summary do
+            assert_difference "Article.count", 2 do
+              News::Updater.call(sources: [ source_a, source_b ])
+            end
           end
         end
       end
@@ -170,9 +178,11 @@ class News::UpdaterTest < ActiveSupport::TestCase
 
     News::RssFetcher.stub :call, items do
       News::ArticleFetcher.stub :call, article_fetcher do
-        News::ArticleSummarizer.stub :call, summary do
-          assert_difference "Article.count", 6 do
-            News::Updater.call(sources: [ @test_source ])
+        News::TopicResearcher.stub :call, "Research." do
+          News::ArticleSummarizer.stub :call, summary do
+            assert_difference "Article.count", 6 do
+              News::Updater.call(sources: [ @test_source ])
+            end
           end
         end
       end
@@ -181,5 +191,42 @@ class News::UpdaterTest < ActiveSupport::TestCase
     release_thread.join(5)
 
     assert_operator thread_ids.size, :>, 1, "Expected multiple threads to be used"
+  end
+
+  test "falls back to no research context when TopicResearcher fails" do
+    rss_items = [
+      { title: "Test article", url: "https://example.com/test", published_at: Time.current }
+    ]
+
+    summary = {
+      title_en: "Test Article",
+      title_ja: "テスト記事",
+      sentences: [
+        { body_en: "This is a test.", body_ja: "これはテストです。" }
+      ]
+    }
+
+    researcher_stub = ->(**_kwargs) { raise "Web search unavailable" }
+
+    captured_research_context = nil
+    summarizer_stub = ->(title:, article_text:, research_context: nil) {
+      captured_research_context = research_context
+      summary
+    }
+
+    News::RssFetcher.stub :call, rss_items do
+      News::ArticleFetcher.stub :call, "Some article text" do
+        News::TopicResearcher.stub :call, researcher_stub do
+          News::ArticleSummarizer.stub :call, summarizer_stub do
+            assert_difference "Article.count", 1 do
+              News::Updater.call(sources: [ @test_source ])
+            end
+          end
+        end
+      end
+    end
+
+    assert_nil captured_research_context, "Research context should be nil when researcher fails"
+    assert_not_nil Article.find_by(source_url: "https://example.com/test")
   end
 end
