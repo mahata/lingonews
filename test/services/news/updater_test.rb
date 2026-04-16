@@ -2,6 +2,7 @@
 
 require "test_helper"
 require "minitest/mock"
+require "concurrent/set"
 
 class News::UpdaterTest < ActiveSupport::TestCase
   setup do
@@ -138,5 +139,36 @@ class News::UpdaterTest < ActiveSupport::TestCase
     article_b = Article.find_by(source_url: "https://example.com/b1")
     assert_equal "Source A", article_a.source
     assert_equal "Source B", article_b.source
+  end
+
+  test "processes articles concurrently" do
+    items = 6.times.map do |i|
+      { title: "Article #{i}", url: "https://example.com/art#{i}", published_at: Time.current }
+    end
+
+    thread_ids = Concurrent::Set.new
+    article_fetcher = ->(_url) {
+      thread_ids << Thread.current.object_id
+      sleep 0.05
+      "Some text"
+    }
+
+    summary = {
+      title_en: "Summary",
+      title_ja: "要約",
+      sentences: [ { body_en: "Text.", body_ja: "テキスト。" } ]
+    }
+
+    News::RssFetcher.stub :call, items do
+      News::ArticleFetcher.stub :call, article_fetcher do
+        News::ArticleSummarizer.stub :call, summary do
+          assert_difference "Article.count", 6 do
+            News::Updater.call(sources: [ @test_source ])
+          end
+        end
+      end
+    end
+
+    assert_operator thread_ids.size, :>, 1, "Expected multiple threads to be used"
   end
 end
