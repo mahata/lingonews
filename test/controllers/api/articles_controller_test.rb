@@ -27,6 +27,8 @@ class Api::ArticlesControllerTest < ActionDispatch::IntegrationTest
     json = JSON.parse(response.body)
     assert_equal article.title_en, json["title_en"]
     assert_equal article.title_ja, json["title_ja"]
+    assert_equal article.source_url, json["source_url"]
+    assert_equal article.source, json["source"]
     assert json.key?("sentences")
     assert_equal article.sentences.count, json["sentences"].size
 

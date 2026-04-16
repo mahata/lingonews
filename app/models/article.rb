@@ -4,4 +4,5 @@ class Article < ApplicationRecord
   validates :title_en, presence: true
   validates :title_ja, presence: true
   validates :published_at, presence: true
+  validates :source_url, format: { with: /\Ahttps?:\/\/\S+\z/i, message: "must be an HTTP or HTTPS URL" }, allow_blank: true
 end
