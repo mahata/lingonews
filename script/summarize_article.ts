@@ -61,9 +61,12 @@ async function main(): Promise<void> {
     let fullResponse = "";
 
     const done = new Promise<void>((resolve, reject) => {
+      const defaultTimeoutMs = 300000;
+      const parsed = parseInt(process.env.SUMMARIZE_TIMEOUT_MS || "", 10);
+      const timeoutMs = Number.isFinite(parsed) && parsed > 0 ? parsed : defaultTimeoutMs;
       const timeout = setTimeout(() => {
-        reject(new Error("Copilot SDK session timed out after 120 seconds"));
-      }, 120_000);
+        reject(new Error(`Copilot SDK session timed out after ${timeoutMs / 1000} seconds`));
+      }, timeoutMs);
 
       session.on("assistant.message", (event) => {
         fullResponse += event.data.content;
