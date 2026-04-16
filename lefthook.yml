@@ -1,0 +1,19 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: rubocop
+      glob: "**/*.rb"
+      run: bin/rubocop {staged_files}
+
+    - name: typecheck
+      glob: "**/*.{ts,tsx}"
+      run: npx tsc --noEmit
+
+pre-push:
+  parallel: true
+  jobs:
+    - name: brakeman
+      run: bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error
+
+    - name: bundler-audit
+      run: bin/bundler-audit

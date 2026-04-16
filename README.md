@@ -31,6 +31,15 @@ To stop the database: `docker compose down` (add `-v` to also remove data).
 
 Or use `bin/dev` to run Rails + esbuild watcher together via Foreman.
 
+### Git Hooks (Lefthook)
+
+This project uses [Lefthook](https://github.com/evilmartians/lefthook) to run lint checks automatically before commits and pushes. Hooks are installed automatically when you run `npm install`.
+
+- **Pre-commit** — runs RuboCop (on staged `.rb` files) and a full-project TypeScript type check in parallel. RuboCop only inspects the files you staged; the TypeScript check triggers when any `.ts`/`.tsx` file is staged but runs the full project since `tsc` requires whole-program context. This catches style violations and type errors before they reach CI.
+- **Pre-push** — runs Brakeman (security analysis) and bundler-audit (gem vulnerability scan) in parallel. These slower, full-project checks run once before code leaves your machine.
+
+To skip hooks temporarily, pass `--no-verify` (e.g., `git commit --no-verify`).
+
 ### Running Tests
 
 ```bash
