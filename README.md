@@ -139,6 +139,7 @@ The app can be wrapped in native iOS/Android shells using [Capacitor](https://ca
 ### Setup
 
 ```bash
+mkdir -p www && echo '<!DOCTYPE html><html><head></head><body>Loading…</body></html>' > www/index.html
 npx cap add ios       # generate the Xcode project
 npx cap add android   # generate the Android Studio project
 npx cap sync          # sync web assets and plugins
