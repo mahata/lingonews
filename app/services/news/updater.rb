@@ -85,8 +85,10 @@ module News
         return
       end
 
+      research_context = research_topic(item[:title], article_text, mutex)
+
       mutex.synchronize { puts "  Summarizing with Copilot SDK..." }
-      summary = News::ArticleSummarizer.call(title: item[:title], article_text: article_text)
+      summary = News::ArticleSummarizer.call(title: item[:title], article_text: article_text, research_context: research_context)
 
       save_article(item, summary, source_name)
       mutex.synchronize { puts "  Saved article: #{summary[:title_en]}" }
@@ -95,6 +97,14 @@ module News
         puts "  ERROR:\n#{e.full_message(highlight: false)}"
         all_errors << { source: source_name, title: item[:title], error: "#{e.class}: #{e.message}" }
       end
+    end
+
+    def research_topic(title, article_text, mutex)
+      mutex.synchronize { puts "  Researching topic on the web..." }
+      News::TopicResearcher.call(title: title, article_text: article_text)
+    rescue => e
+      mutex.synchronize { puts "  WARNING: Web research failed (#{e.message}), proceeding without research context." }
+      nil
     end
 
     def save_article(item, summary, source_name)
