@@ -3,6 +3,7 @@
 module News
   class Updater
     MAX_CONCURRENCY = 4
+    MAX_RESEARCH_CONCURRENCY = 2
 
     def self.call(sources: News::Sources.all, limit: nil)
       new(sources:, limit:).call
@@ -62,11 +63,13 @@ module News
 
       queue = Queue.new
       processable_items.each { |wi| queue << wi }
+      research_semaphore = SizedQueue.new(MAX_RESEARCH_CONCURRENCY)
+      MAX_RESEARCH_CONCURRENCY.times { research_semaphore << :slot }
 
       threads = pool_size.times.map do
         Thread.new do
           while (work = begin; queue.pop(true); rescue ThreadError; nil; end)
-            process_item(work[:item], work[:source].name, all_errors, mutex)
+            process_item(work[:item], work[:source].name, all_errors, mutex, research_semaphore)
           end
         end
       end
@@ -75,7 +78,7 @@ module News
       all_errors
     end
 
-    def process_item(item, source_name, all_errors, mutex)
+    def process_item(item, source_name, all_errors, mutex, research_semaphore)
       mutex.synchronize { puts "Fetching: #{item[:title]}" }
 
       article_text = News::ArticleFetcher.call(item[:url])
@@ -85,7 +88,7 @@ module News
         return
       end
 
-      research_context = research_topic(item[:title], article_text, mutex)
+      research_context = research_topic(item[:title], article_text, mutex, research_semaphore)
 
       mutex.synchronize { puts "  Summarizing with Copilot SDK..." }
       summary = News::ArticleSummarizer.call(title: item[:title], article_text: article_text, research_context: research_context)
@@ -99,12 +102,15 @@ module News
       end
     end
 
-    def research_topic(title, article_text, mutex)
+    def research_topic(title, article_text, mutex, research_semaphore)
+      research_semaphore.pop
       mutex.synchronize { puts "  Researching topic on the web..." }
       News::TopicResearcher.call(title: title, article_text: article_text)
     rescue => e
       mutex.synchronize { puts "  WARNING: Web research failed (#{e.message}), proceeding without research context." }
       nil
+    ensure
+      research_semaphore << :slot
     end
 
     def save_article(item, summary, source_name)

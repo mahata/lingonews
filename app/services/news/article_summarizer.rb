@@ -29,7 +29,9 @@ module News
       begin
         attempts += 1
         stdout, stderr, status = Open3.capture3(
-          { "GITHUB_TOKEN" => ENV.fetch("GITHUB_TOKEN"), "RESEARCH_CONTEXT" => @research_context.to_s },
+          { "GITHUB_TOKEN" => ENV.fetch("GITHUB_TOKEN"),
+            "RESEARCH_CONTEXT" => @research_context.to_s,
+            "SUMMARIZE_TIMEOUT_MS" => ENV.fetch("SUMMARIZE_TIMEOUT_MS", "300000") },
           "npx", "--no-install", "tsx", SCRIPT_PATH, @title,
           stdin_data: @article_text,
           chdir: Rails.root.to_s
