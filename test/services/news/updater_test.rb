@@ -139,4 +139,47 @@ class News::UpdaterTest < ActiveSupport::TestCase
     assert_equal "Source A", article_a.source
     assert_equal "Source B", article_b.source
   end
+
+  test "processes articles concurrently" do
+    items = 6.times.map do |i|
+      { title: "Article #{i}", url: "https://example.com/art#{i}", published_at: Time.current }
+    end
+
+    mutex = Mutex.new
+    thread_ids = Set.new
+    arrived = Queue.new
+    gate = Queue.new
+
+    article_fetcher = ->(_url) {
+      mutex.synchronize { thread_ids << Thread.current.object_id }
+      arrived << true
+      gate.pop
+      "Some text"
+    }
+
+    summary = {
+      title_en: "Summary",
+      title_ja: "要約",
+      sentences: [ { body_en: "Text.", body_ja: "テキスト。" } ]
+    }
+
+    release_thread = Thread.new do
+      News::Updater::MAX_CONCURRENCY.times { arrived.pop }
+      items.size.times { gate << true }
+    end
+
+    News::RssFetcher.stub :call, items do
+      News::ArticleFetcher.stub :call, article_fetcher do
+        News::ArticleSummarizer.stub :call, summary do
+          assert_difference "Article.count", 6 do
+            News::Updater.call(sources: [ @test_source ])
+          end
+        end
+      end
+    end
+
+    release_thread.join(5)
+
+    assert_operator thread_ids.size, :>, 1, "Expected multiple threads to be used"
+  end
 end
