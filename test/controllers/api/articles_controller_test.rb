@@ -24,12 +24,13 @@ class Api::ArticlesControllerTest < ActionDispatch::IntegrationTest
     assert_equal dates.sort.reverse, dates
   end
 
-  test "index respects page parameter" do
+  test "index respects page parameter and returns at most PER_PAGE articles" do
     get "/api/articles", params: { page: 1 }
     assert_response :success
 
     json = JSON.parse(response.body)
     assert_equal 1, json["page"]
+    assert json["articles"].size <= Api::ArticlesController::PER_PAGE
   end
 
   test "index clamps page to minimum of 1" do
@@ -38,6 +39,15 @@ class Api::ArticlesControllerTest < ActionDispatch::IntegrationTest
 
     json = JSON.parse(response.body)
     assert_equal 1, json["page"]
+  end
+
+  test "index clamps page to maximum of total_pages" do
+    get "/api/articles", params: { page: 999 }
+    assert_response :success
+
+    json = JSON.parse(response.body)
+    expected_max = [ (Article.count.to_f / Api::ArticlesController::PER_PAGE).ceil, 1 ].max
+    assert_equal expected_max, json["page"]
   end
 
   test "index returns correct total_pages" do

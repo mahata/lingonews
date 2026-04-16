@@ -35,6 +35,7 @@ function Pagination({
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
         className="pagination-btn"
+        aria-label="Previous page"
       >
         ‹
       </button>
@@ -52,6 +53,7 @@ function Pagination({
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
         className="pagination-btn"
+        aria-label="Next page"
       >
         ›
       </button>
@@ -70,6 +72,7 @@ export function ArticleList({ locale }: Props) {
 
   useEffect(() => {
     setLoading(true);
+    setError(null);
     fetch(`/api/articles?page=${currentPage}`)
       .then((res) => {
         if (!res.ok) {

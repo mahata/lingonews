@@ -5,9 +5,10 @@ module Api
     PER_PAGE = 20
 
     def index
-      page = [ params.fetch(:page, 1).to_i, 1 ].max
+      requested_page = [ params.fetch(:page, 1).to_i, 1 ].max
       total_count = Article.count
       total_pages = (total_count.to_f / PER_PAGE).ceil
+      page = [ requested_page, [ total_pages, 1 ].max ].min
       articles = Article.order(published_at: :desc).offset((page - 1) * PER_PAGE).limit(PER_PAGE)
 
       render json: {
