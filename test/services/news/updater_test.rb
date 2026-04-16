@@ -45,6 +45,7 @@ class News::UpdaterTest < ActiveSupport::TestCase
     assert_equal "Cherry Blossoms in Full Bloom in Tokyo", article.title_en
     assert_equal "東京で桜が満開", article.title_ja
     assert_equal "Test Source", article.source
+    assert_equal "東京で桜が満開", article.source_title
     assert_equal 2, article.sentences.count
     assert_equal "Cherry blossoms reached full bloom.", article.sentences.first.body_en
   end

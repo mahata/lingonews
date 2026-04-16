@@ -68,7 +68,8 @@ module News
           title_ja: summary[:title_ja],
           published_at: item[:published_at] || Time.current,
           source_url: item[:url],
-          source: source_name
+          source: source_name,
+          source_title: item[:title]
         )
 
         summary[:sentences].each_with_index do |sentence, index|

@@ -7,6 +7,7 @@ export interface Article {
   published_at: string;
   source_url?: string | null;
   source?: string | null;
+  source_title?: string | null;
   sentences?: Sentence[];
 }
 

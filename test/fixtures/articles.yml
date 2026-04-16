@@ -4,6 +4,7 @@ bullet_train:
   published_at: "2026-04-10"
   source_url: "https://www3.nhk.or.jp/news/html/20260410/bullet-train.html"
   source: "NHK News"
+  source_title: "日本が新型新幹線の運行を開始"
 
 deep_sea:
   title_en: "Scientists Discover Deep-Sea Species"
@@ -11,3 +12,4 @@ deep_sea:
   published_at: "2026-04-08"
   source_url: "https://www3.nhk.or.jp/news/html/20260408/deep-sea.html"
   source: "NHK News"
+  source_title: "深海で新種の生物を発見"
