@@ -23,4 +23,21 @@ class ArticleTest < ActiveSupport::TestCase
       article.destroy
     end
   end
+
+  test "validates source_url must be http or https" do
+    article = articles(:bullet_train)
+
+    article.source_url = "javascript:alert(1)"
+    assert_not article.valid?
+    assert_includes article.errors[:source_url], "must be an HTTP or HTTPS URL"
+
+    article.source_url = "https://example.com/article"
+    assert article.valid?
+
+    article.source_url = "http://example.com/article"
+    assert article.valid?
+
+    article.source_url = nil
+    assert article.valid?
+  end
 end

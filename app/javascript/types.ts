@@ -5,8 +5,8 @@ export interface Article {
   title_en: string;
   title_ja: string;
   published_at: string;
-  source_url: string | null;
-  source: string | null;
+  source_url?: string | null;
+  source?: string | null;
   sentences?: Sentence[];
 }
 

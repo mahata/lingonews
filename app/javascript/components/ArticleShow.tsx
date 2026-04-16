@@ -94,11 +94,20 @@ export function ArticleShow({ locale }: Props) {
             href={article.source_url}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label={
+              article.source
+                ? locale === "en"
+                  ? `Read the original article on ${article.source} (opens in a new tab)`
+                  : `${article.source}で元の記事を読む（新しいタブで開きます）`
+                : locale === "en"
+                  ? "Read the original article (opens in a new tab)"
+                  : "元の記事を読む（新しいタブで開きます）"
+            }
           >
             {article.source
               ? locale === "en"
                 ? `Read the original article on ${article.source}`
-                : `${article.source} で元の記事を読む`
+                : `${article.source}で元の記事を読む`
               : locale === "en"
                 ? "Read the original article"
                 : "元の記事を読む"}
