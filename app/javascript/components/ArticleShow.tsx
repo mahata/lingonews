@@ -88,29 +88,16 @@ export function ArticleShow({ locale }: Props) {
       </div>
 
       {article.source_url && (
-        <div className="read-more">
-          <h2>{locale === "en" ? "Read More" : "続きを読む"}</h2>
+        <div className="source-link">
           <a
             href={article.source_url}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={
-              article.source
-                ? locale === "en"
-                  ? `Read the original article on ${article.source} (opens in a new tab)`
-                  : `${article.source}で元の記事を読む（新しいタブで開きます）`
-                : locale === "en"
-                  ? "Read the original article (opens in a new tab)"
-                  : "元の記事を読む（新しいタブで開きます）"
-            }
+            aria-label={`${article.source_title || article.source || article.source_url} ${
+              locale === "en" ? "(opens in a new tab)" : "（新しいタブで開きます）"
+            }`}
           >
-            {article.source
-              ? locale === "en"
-                ? `Read the original article on ${article.source}`
-                : `${article.source}で元の記事を読む`
-              : locale === "en"
-                ? "Read the original article"
-                : "元の記事を読む"}
+            {article.source_title || article.source || article.source_url}
           </a>
         </div>
       )}

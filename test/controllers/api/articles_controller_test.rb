@@ -67,6 +67,7 @@ class Api::ArticlesControllerTest < ActionDispatch::IntegrationTest
     assert_equal article.title_ja, json["title_ja"]
     assert_equal article.source_url, json["source_url"]
     assert_equal article.source, json["source"]
+    assert_equal article.source_title, json["source_title"]
     assert json.key?("sentences")
     assert_equal article.sentences.count, json["sentences"].size
 
