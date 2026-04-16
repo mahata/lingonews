@@ -2,7 +2,6 @@
 
 require "test_helper"
 require "minitest/mock"
-require "concurrent/set"
 
 class News::UpdaterTest < ActiveSupport::TestCase
   setup do
@@ -146,10 +145,15 @@ class News::UpdaterTest < ActiveSupport::TestCase
       { title: "Article #{i}", url: "https://example.com/art#{i}", published_at: Time.current }
     end
 
-    thread_ids = Concurrent::Set.new
+    mutex = Mutex.new
+    thread_ids = Set.new
+    arrived = Queue.new
+    gate = Queue.new
+
     article_fetcher = ->(_url) {
-      thread_ids << Thread.current.object_id
-      sleep 0.05
+      mutex.synchronize { thread_ids << Thread.current.object_id }
+      arrived << true
+      gate.pop
       "Some text"
     }
 
@@ -158,6 +162,11 @@ class News::UpdaterTest < ActiveSupport::TestCase
       title_ja: "要約",
       sentences: [ { body_en: "Text.", body_ja: "テキスト。" } ]
     }
+
+    release_thread = Thread.new do
+      News::Updater::MAX_CONCURRENCY.times { arrived.pop }
+      items.size.times { gate << true }
+    end
 
     News::RssFetcher.stub :call, items do
       News::ArticleFetcher.stub :call, article_fetcher do
@@ -168,6 +177,8 @@ class News::UpdaterTest < ActiveSupport::TestCase
         end
       end
     end
+
+    release_thread.join(5)
 
     assert_operator thread_ids.size, :>, 1, "Expected multiple threads to be used"
   end

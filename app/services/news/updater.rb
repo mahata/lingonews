@@ -54,7 +54,10 @@ module News
         all_errors << { source: wi[:source].name, title: "(feed fetch)", error: "#{e.class}: #{e.message}" }
       end
 
-      pool_size = [ processable_items.size, MAX_CONCURRENCY ].min
+      return all_errors if processable_items.empty?
+
+      db_pool_limit = ActiveRecord::Base.connection_pool.size - 1
+      pool_size = [ processable_items.size, MAX_CONCURRENCY, db_pool_limit ].min
       puts "Processing #{processable_items.size} article(s) with #{pool_size} worker(s)..."
 
       queue = Queue.new
@@ -62,7 +65,7 @@ module News
 
       threads = pool_size.times.map do
         Thread.new do
-          while (work = queue.pop(true) rescue nil)
+          while (work = begin; queue.pop(true); rescue ThreadError; nil; end)
             process_item(work[:item], work[:source].name, all_errors, mutex)
           end
         end
