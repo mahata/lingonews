@@ -5,9 +5,16 @@
     "build": "esbuild app/javascript/application.tsx --bundle --sourcemap --format=esm --outdir=app/assets/builds --loader:.tsx=tsx --loader:.ts=ts",
     "build:watch": "esbuild app/javascript/application.tsx --bundle --sourcemap --format=esm --outdir=app/assets/builds --loader:.tsx=tsx --loader:.ts=ts --watch",
     "build:production": "esbuild app/javascript/application.tsx --bundle --minify --format=esm --outdir=app/assets/builds --loader:.tsx=tsx --loader:.ts=ts",
+    "cap:sync": "npx cap sync",
+    "cap:open:ios": "npx cap open ios",
+    "cap:open:android": "npx cap open android",
     "postinstall": "if [ -d .git ]; then lefthook install; fi"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/ios": "^8.3.0",
     "@github/copilot-sdk": "^0.2.2",
     "esbuild": "^0.28.0",
     "react": "^19.2.5",
