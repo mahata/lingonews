@@ -131,3 +131,25 @@ The app is configured for minimal cost (~$3–4/month):
 - **Machine**: `shared-cpu-1x` with 256MB RAM
 - **Postgres**: single-node, 1GB volume
 - **Auto-stop**: machines stop when idle and restart on incoming requests (adds ~2–5s cold start)
+
+## Mobile Apps (Capacitor)
+
+The app can be wrapped in native iOS/Android shells using [Capacitor](https://capacitorjs.com/). The native apps load the deployed web app (`https://lingonews.fly.dev`) inside a WebView.
+
+### Setup
+
+```bash
+mkdir -p www && echo '<!DOCTYPE html><html><head></head><body>Loading…</body></html>' > www/index.html
+npx cap add ios       # generate the Xcode project
+npx cap add android   # generate the Android Studio project
+npx cap sync          # sync web assets and plugins
+```
+
+### Opening Native Projects
+
+```bash
+npm run cap:open:ios       # open in Xcode
+npm run cap:open:android   # open in Android Studio
+```
+
+From there, build and run on a simulator or device using the native IDE.
