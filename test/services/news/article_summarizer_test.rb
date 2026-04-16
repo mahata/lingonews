@@ -29,7 +29,7 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
 
     mock_status = Data.define(:success?, :exitstatus).new("success?": true, exitstatus: 0)
 
-    Open3.stub :capture3, [ mock_output, "", mock_status ] do
+    stub_run_with_timeout([ mock_output, "", mock_status ]) do
       result = News::ArticleSummarizer.call(
         title: "東京で桜が満開",
         article_text: "東京都内の桜が14日、満開を迎えました。"
@@ -54,12 +54,18 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
     mock_status = Data.define(:success?, :exitstatus).new("success?": true, exitstatus: 0)
 
     captured_env = nil
-    mock_capture3 = ->(*args, **opts) {
-      captured_env = args.first if args.first.is_a?(Hash)
-      [ mock_output, "", mock_status ]
+    mock_new = ->(script_path:, env:, args:, stdin_data:) {
+      captured_env = env
+      runner = News::CopilotScriptRunner.allocate
+      runner.instance_variable_set(:@script_path, script_path)
+      runner.instance_variable_set(:@env, env)
+      runner.instance_variable_set(:@args, args)
+      runner.instance_variable_set(:@stdin_data, stdin_data)
+      runner.define_singleton_method(:run) { JSON.parse(mock_output) }
+      runner
     }
 
-    Open3.stub :capture3, mock_capture3 do
+    News::CopilotScriptRunner.stub :new, mock_new do
       News::ArticleSummarizer.call(
         title: "東京で桜が満開",
         article_text: "桜が満開を迎えました。",
@@ -77,15 +83,19 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
       sentences: [ { body_en: "Test.", body_ja: "テスト。" } ]
     }.to_json
 
-    mock_status = Data.define(:success?, :exitstatus).new("success?": true, exitstatus: 0)
-
     captured_env = nil
-    mock_capture3 = ->(*args, **opts) {
-      captured_env = args.first if args.first.is_a?(Hash)
-      [ mock_output, "", mock_status ]
+    mock_new = ->(script_path:, env:, args:, stdin_data:) {
+      captured_env = env
+      runner = News::CopilotScriptRunner.allocate
+      runner.instance_variable_set(:@script_path, script_path)
+      runner.instance_variable_set(:@env, env)
+      runner.instance_variable_set(:@args, args)
+      runner.instance_variable_set(:@stdin_data, stdin_data)
+      runner.define_singleton_method(:run) { JSON.parse(mock_output) }
+      runner
     }
 
-    Open3.stub :capture3, mock_capture3 do
+    News::CopilotScriptRunner.stub :new, mock_new do
       News::ArticleSummarizer.call(
         title: "Test",
         article_text: "Test text"
@@ -98,7 +108,7 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
   test "raises error when script fails" do
     mock_status = Data.define(:success?, :exitstatus).new("success?": false, exitstatus: 1)
 
-    Open3.stub :capture3, [ "", "Something went wrong", mock_status ] do
+    stub_run_with_timeout([ "", "Something went wrong", mock_status ]) do
       error = assert_raises(RuntimeError) do
         News::ArticleSummarizer.call(title: "Test", article_text: "Test text")
       end
@@ -110,12 +120,12 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
     mock_status = Data.define(:success?, :exitstatus).new("success?": true, exitstatus: 0)
 
     call_count = 0
-    mock_capture3 = ->(*_args, **_opts) {
+    mock = ->() {
       call_count += 1
       [ "not json", "", mock_status ]
     }
 
-    Open3.stub :capture3, mock_capture3 do
+    stub_run_with_timeout(mock) do
       assert_raises(JSON::ParserError) do
         News::ArticleSummarizer.call(title: "Test", article_text: "Test text")
       end
@@ -136,7 +146,7 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
     }.to_json
 
     call_count = 0
-    mock_capture3 = ->(*_args, **_opts) {
+    mock = ->() {
       call_count += 1
       if call_count == 1
         [ "not json {broken", "", mock_status ]
@@ -146,7 +156,7 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
     }
 
     result = nil
-    Open3.stub :capture3, mock_capture3 do
+    stub_run_with_timeout(mock) do
       result = News::ArticleSummarizer.call(title: "Test", article_text: "Test text")
     end
 
@@ -169,7 +179,7 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
     }.to_json
 
     call_count = 0
-    mock_capture3 = ->(*_args, **_opts) {
+    mock = ->() {
       call_count += 1
       if call_count == 1
         [ "", "Error: Expected ',' or '}' after property value in JSON at position 136", fail_status ]
@@ -179,7 +189,7 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
     }
 
     result = nil
-    Open3.stub :capture3, mock_capture3 do
+    stub_run_with_timeout(mock) do
       result = News::ArticleSummarizer.call(title: "Test", article_text: "Test text")
     end
 
@@ -191,12 +201,12 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
     fail_status = Data.define(:success?, :exitstatus).new("success?": false, exitstatus: 1)
 
     call_count = 0
-    mock_capture3 = ->(*_args, **_opts) {
+    mock = ->() {
       call_count += 1
       [ "", "Error: Unexpected end of JSON input", fail_status ]
     }
 
-    Open3.stub :capture3, mock_capture3 do
+    stub_run_with_timeout(mock) do
       error = assert_raises(RuntimeError) do
         News::ArticleSummarizer.call(title: "Test", article_text: "Test text")
       end
@@ -218,23 +228,28 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
 
     mock_status = Data.define(:success?, :exitstatus).new("success?": true, exitstatus: 0)
 
-    captured_title = nil
+    captured_args = nil
     captured_stdin = nil
-    mock_capture3 = ->(*args, **opts) {
-      captured_title = args.last
-      captured_stdin = opts[:stdin_data]
-      [ mock_output, "", mock_status ]
+    mock_new = ->(script_path:, env:, args:, stdin_data:) {
+      captured_args = args
+      captured_stdin = stdin_data
+      runner = News::CopilotScriptRunner.allocate
+      runner.instance_variable_set(:@script_path, script_path)
+      runner.instance_variable_set(:@env, env)
+      runner.instance_variable_set(:@args, args)
+      runner.instance_variable_set(:@stdin_data, stdin_data)
+      runner.define_singleton_method(:run) { JSON.parse(mock_output) }
+      runner
     }
 
-    # Title uses U+201C and U+201D (left/right double quotation marks)
-    # Article text uses all five: U+201C, U+201D, U+301D, U+301E, U+FF02
-    Open3.stub :capture3, mock_capture3 do
+    News::CopilotScriptRunner.stub :new, mock_new do
       News::ArticleSummarizer.call(
         title: "NATO加盟の30か国の大使らが来日 \u201C異例の規模\u201Dの訪問団",
         article_text: "\u201Cａ\u201Dｂ\u301Dｃ\u301Eｄ\uFF02ｅ"
       )
     end
 
+    captured_title = captured_args.last
     refute_match(/[\u201C\u201D\u301D\u301E\uFF02]/, captured_title,
       "All problematic quotes should be stripped from title")
     refute_match(/[\u201C\u201D\u301D\u301E\uFF02]/, captured_stdin,
@@ -247,17 +262,39 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
     mock_status = Data.define(:success?, :exitstatus).new("success?": false, exitstatus: 1)
 
     call_count = 0
-    mock_capture3 = ->(*_args, **_opts) {
+    mock = ->() {
       call_count += 1
       [ "", "Something went wrong", mock_status ]
     }
 
-    Open3.stub :capture3, mock_capture3 do
+    stub_run_with_timeout(mock) do
       assert_raises(RuntimeError) do
         News::ArticleSummarizer.call(title: "Test", article_text: "Test text")
       end
     end
 
     assert_equal 1, call_count, "Should not retry on non-JSON errors"
+  end
+
+  private
+
+  def stub_run_with_timeout(response_or_callable)
+    original_new = News::CopilotScriptRunner.method(:new)
+
+    mock_new = ->(**kwargs) {
+      runner = original_new.call(**kwargs)
+      runner.define_singleton_method(:run_with_timeout) do
+        if response_or_callable.respond_to?(:call)
+          response_or_callable.call
+        else
+          response_or_callable
+        end
+      end
+      runner
+    }
+
+    News::CopilotScriptRunner.stub :new, mock_new do
+      yield
+    end
   end
 end

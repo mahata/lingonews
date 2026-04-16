@@ -20,7 +20,7 @@ class News::TopicResearcherTest < ActiveSupport::TestCase
     mock_output = { research_context: "Additional background on the topic found via web research." }.to_json
     mock_status = Data.define(:success?, :exitstatus).new("success?": true, exitstatus: 0)
 
-    Open3.stub :capture3, [ mock_output, "", mock_status ] do
+    stub_run_with_timeout([ mock_output, "", mock_status ]) do
       result = News::TopicResearcher.call(
         title: "東京で桜が満開",
         article_text: "東京都内の桜が14日、満開を迎えました。"
@@ -33,7 +33,7 @@ class News::TopicResearcherTest < ActiveSupport::TestCase
   test "raises error when script fails" do
     mock_status = Data.define(:success?, :exitstatus).new("success?": false, exitstatus: 1)
 
-    Open3.stub :capture3, [ "", "Something went wrong", mock_status ] do
+    stub_run_with_timeout([ "", "Something went wrong", mock_status ]) do
       error = assert_raises(RuntimeError) do
         News::TopicResearcher.call(title: "Test", article_text: "Test text")
       end
@@ -45,12 +45,12 @@ class News::TopicResearcherTest < ActiveSupport::TestCase
     mock_status = Data.define(:success?, :exitstatus).new("success?": true, exitstatus: 0)
 
     call_count = 0
-    mock_capture3 = ->(*_args, **_opts) {
+    mock = ->() {
       call_count += 1
       [ "not json", "", mock_status ]
     }
 
-    Open3.stub :capture3, mock_capture3 do
+    stub_run_with_timeout(mock) do
       assert_raises(JSON::ParserError) do
         News::TopicResearcher.call(title: "Test", article_text: "Test text")
       end
@@ -65,7 +65,7 @@ class News::TopicResearcherTest < ActiveSupport::TestCase
     valid_output = { research_context: "Some research findings." }.to_json
 
     call_count = 0
-    mock_capture3 = ->(*_args, **_opts) {
+    mock = ->() {
       call_count += 1
       if call_count == 1
         [ "not json {broken", "", mock_status ]
@@ -75,7 +75,7 @@ class News::TopicResearcherTest < ActiveSupport::TestCase
     }
 
     result = nil
-    Open3.stub :capture3, mock_capture3 do
+    stub_run_with_timeout(mock) do
       result = News::TopicResearcher.call(title: "Test", article_text: "Test text")
     end
 
@@ -87,7 +87,7 @@ class News::TopicResearcherTest < ActiveSupport::TestCase
     mock_output = { other_field: "no research_context here" }.to_json
     mock_status = Data.define(:success?, :exitstatus).new("success?": true, exitstatus: 0)
 
-    Open3.stub :capture3, [ mock_output, "", mock_status ] do
+    stub_run_with_timeout([ mock_output, "", mock_status ]) do
       error = assert_raises(RuntimeError) do
         News::TopicResearcher.call(title: "Test", article_text: "Test text")
       end
@@ -99,21 +99,28 @@ class News::TopicResearcherTest < ActiveSupport::TestCase
     mock_output = { research_context: "Research findings." }.to_json
     mock_status = Data.define(:success?, :exitstatus).new("success?": true, exitstatus: 0)
 
-    captured_title = nil
+    captured_args = nil
     captured_stdin = nil
-    mock_capture3 = ->(*args, **opts) {
-      captured_title = args.last
-      captured_stdin = opts[:stdin_data]
-      [ mock_output, "", mock_status ]
+    mock_new = ->(script_path:, env:, args:, stdin_data:) {
+      captured_args = args
+      captured_stdin = stdin_data
+      runner = News::CopilotScriptRunner.allocate
+      runner.instance_variable_set(:@script_path, script_path)
+      runner.instance_variable_set(:@env, env)
+      runner.instance_variable_set(:@args, args)
+      runner.instance_variable_set(:@stdin_data, stdin_data)
+      runner.define_singleton_method(:run) { JSON.parse(mock_output) }
+      runner
     }
 
-    Open3.stub :capture3, mock_capture3 do
+    News::CopilotScriptRunner.stub :new, mock_new do
       News::TopicResearcher.call(
         title: "\u201C異例の規模\u201Dの訪問団",
         article_text: "\u201Cａ\u201Dｂ\u301Dｃ\u301Eｄ\uFF02ｅ"
       )
     end
 
+    captured_title = captured_args.last
     refute_match(/[\u201C\u201D\u301D\u301E\uFF02]/, captured_title)
     refute_match(/[\u201C\u201D\u301D\u301E\uFF02]/, captured_stdin)
   end
@@ -122,17 +129,39 @@ class News::TopicResearcherTest < ActiveSupport::TestCase
     mock_status = Data.define(:success?, :exitstatus).new("success?": false, exitstatus: 1)
 
     call_count = 0
-    mock_capture3 = ->(*_args, **_opts) {
+    mock = ->() {
       call_count += 1
       [ "", "Something went wrong", mock_status ]
     }
 
-    Open3.stub :capture3, mock_capture3 do
+    stub_run_with_timeout(mock) do
       assert_raises(RuntimeError) do
         News::TopicResearcher.call(title: "Test", article_text: "Test text")
       end
     end
 
     assert_equal 1, call_count, "Should not retry on non-JSON errors"
+  end
+
+  private
+
+  def stub_run_with_timeout(response_or_callable)
+    original_new = News::CopilotScriptRunner.method(:new)
+
+    mock_new = ->(**kwargs) {
+      runner = original_new.call(**kwargs)
+      runner.define_singleton_method(:run_with_timeout) do
+        if response_or_callable.respond_to?(:call)
+          response_or_callable.call
+        else
+          response_or_callable
+        end
+      end
+      runner
+    }
+
+    News::CopilotScriptRunner.stub :new, mock_new do
+      yield
+    end
   end
 end

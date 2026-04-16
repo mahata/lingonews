@@ -9,7 +9,7 @@ jobs:
   update:
     name: Update news
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     concurrency: news-update
     steps:
       - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # 1.6

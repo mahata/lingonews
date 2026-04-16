@@ -3,17 +3,17 @@ pre-commit:
   jobs:
     - name: rubocop
       glob: "**/*.rb"
-      run: bin/rubocop {staged_files}
+      run: mise exec -- bin/rubocop {staged_files}
 
     - name: typecheck
       glob: "**/*.{ts,tsx}"
-      run: npx tsc --noEmit
+      run: mise exec -- npx tsc --noEmit
 
 pre-push:
   parallel: true
   jobs:
     - name: brakeman
-      run: bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error
+      run: mise exec -- bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error
 
     - name: bundler-audit
-      run: bin/bundler-audit
+      run: mise exec -- bin/bundler-audit
