@@ -86,21 +86,6 @@ export function ArticleShow({ locale }: Props) {
           </div>
         ))}
       </div>
-
-      {article.source_url && (
-        <div className="source-link">
-          <a
-            href={article.source_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`${article.source_title || article.source || article.source_url} ${
-              locale === "en" ? "(opens in a new tab)" : "（新しいタブで開きます）"
-            }`}
-          >
-            {article.source_title || article.source || article.source_url}
-          </a>
-        </div>
-      )}
     </div>
   );
 }
