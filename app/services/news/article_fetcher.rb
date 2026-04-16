@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "net/http"
 require "nokogiri"
 
 module News
@@ -23,24 +22,13 @@ module News
     private
 
     def fetch_html
-      uri = URI(@url)
-
-      response = http_get(uri)
-
-      # Follow redirects (up to 3)
-      3.times do
-        break unless response.is_a?(Net::HTTPRedirection)
-        uri = URI(response["location"])
-        response = http_get(uri)
-      end
+      response = News::HttpClient.get(@url)
 
       unless response.is_a?(Net::HTTPSuccess)
         raise "Failed to fetch article: HTTP #{response.code} for #{@url}"
       end
 
       encode_body(response)
-    rescue Net::OpenTimeout, Net::ReadTimeout => e
-      raise "Failed to fetch article: #{@url} timed out (#{e.class})"
     end
 
     def encode_body(response)
@@ -51,7 +39,6 @@ module News
       if encoding
         body.force_encoding(encoding)
       else
-        # Let Nokogiri detect encoding from <meta> tags
         detected = Nokogiri::HTML(body).encoding
         detected_encoding = find_encoding(detected)
         body.force_encoding(detected_encoding) if detected_encoding
@@ -76,21 +63,14 @@ module News
       match&.[](1)
     end
 
-    def http_get(uri)
-      Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https", open_timeout: 10, read_timeout: 15) do |http|
-        http.get(uri.request_uri)
-      end
-    end
-
     def extract_text(html)
       doc = Nokogiri::HTML(html)
 
       STRIP_ELEMENTS.each { |tag| doc.css(tag).remove }
 
-      # Prefer article-specific content containers
       content = doc.at_css("article") ||
                 doc.at_css('[role="main"]') ||
-                doc.at_css(".content--detail-body") || # NHK-specific
+                doc.at_css(".content--detail-body") ||
                 doc.at_css("main") ||
                 doc.at_css("body")
 

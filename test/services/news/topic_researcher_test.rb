@@ -37,7 +37,7 @@ class News::TopicResearcherTest < ActiveSupport::TestCase
       error = assert_raises(RuntimeError) do
         News::TopicResearcher.call(title: "Test", article_text: "Test text")
       end
-      assert_match(/Research script failed/, error.message)
+      assert_match(/Script failed/, error.message)
     end
   end
 
