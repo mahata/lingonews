@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { formatDate } from "../types";
 import type { Article, Locale, Sentence } from "../types";
 
 interface Props {
@@ -58,10 +59,7 @@ export function ArticleShow({ locale }: Props) {
 
       <h1>{locale === "en" ? article.title_en : article.title_ja}</h1>
       <time dateTime={article.published_at}>
-        {new Date(article.published_at).toLocaleDateString(
-          locale === "en" ? "en-US" : "ja-JP",
-          { year: "numeric", month: "long", day: "numeric" }
-        )}
+        {formatDate(article.published_at, locale)}
       </time>
 
       <div className="sentences">

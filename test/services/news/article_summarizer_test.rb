@@ -5,11 +5,16 @@ require "minitest/mock"
 
 class News::ArticleSummarizerTest < ActiveSupport::TestCase
   setup do
+    @original_github_token = ENV["GITHUB_TOKEN"]
     ENV["GITHUB_TOKEN"] = "test-token"
   end
 
   teardown do
-    ENV.delete("GITHUB_TOKEN")
+    if @original_github_token
+      ENV["GITHUB_TOKEN"] = @original_github_token
+    else
+      ENV.delete("GITHUB_TOKEN")
+    end
   end
 
   test "calls script and parses JSON output" do
@@ -97,7 +102,7 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
       error = assert_raises(RuntimeError) do
         News::ArticleSummarizer.call(title: "Test", article_text: "Test text")
       end
-      assert_match(/Summarizer script failed/, error.message)
+      assert_match(/Script failed/, error.message)
     end
   end
 
@@ -195,7 +200,7 @@ class News::ArticleSummarizerTest < ActiveSupport::TestCase
       error = assert_raises(RuntimeError) do
         News::ArticleSummarizer.call(title: "Test", article_text: "Test text")
       end
-      assert_match(/Summarizer script failed/, error.message)
+      assert_match(/Script failed/, error.message)
       assert_match(/JSON/, error.message)
     end
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { formatDate } from "../types";
 import type { Article, Locale } from "../types";
 
 interface Props {
@@ -24,9 +25,27 @@ function Pagination({
 }) {
   if (totalPages <= 1) return null;
 
-  const pages: number[] = [];
-  for (let i = 1; i <= totalPages; i++) {
+  const windowSize = 2;
+  const pages: (number | "ellipsis-start" | "ellipsis-end")[] = [];
+  const windowStart = Math.max(2, page - windowSize);
+  const windowEnd = Math.min(totalPages - 1, page + windowSize);
+
+  pages.push(1);
+
+  if (windowStart > 2) {
+    pages.push("ellipsis-start");
+  }
+
+  for (let i = windowStart; i <= windowEnd; i++) {
     pages.push(i);
+  }
+
+  if (windowEnd < totalPages - 1) {
+    pages.push("ellipsis-end");
+  }
+
+  if (totalPages > 1) {
+    pages.push(totalPages);
   }
 
   return (
@@ -37,25 +56,31 @@ function Pagination({
         className="pagination-btn"
         aria-label="Previous page"
       >
-        ‹
+        &lsaquo;
       </button>
-      {pages.map((p) => (
-        <button
-          key={p}
-          onClick={() => onPageChange(p)}
-          className={`pagination-btn ${p === page ? "pagination-btn-active" : ""}`}
-          aria-current={p === page ? "page" : undefined}
-        >
-          {p}
-        </button>
-      ))}
+      {pages.map((p) =>
+        typeof p === "string" ? (
+          <span key={p} className="pagination-ellipsis">
+            &hellip;
+          </span>
+        ) : (
+          <button
+            key={p}
+            onClick={() => onPageChange(p)}
+            className={`pagination-btn ${p === page ? "pagination-btn-active" : ""}`}
+            aria-current={p === page ? "page" : undefined}
+          >
+            {p}
+          </button>
+        )
+      )}
       <button
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
         className="pagination-btn"
         aria-label="Next page"
       >
-        ›
+        &rsaquo;
       </button>
     </nav>
   );
@@ -128,10 +153,7 @@ export function ArticleList({ locale }: Props) {
                     {locale === "en" ? article.title_en : article.title_ja}
                   </h2>
                   <time dateTime={article.published_at}>
-                    {new Date(article.published_at).toLocaleDateString(
-                      locale === "en" ? "en-US" : "ja-JP",
-                      { year: "numeric", month: "long", day: "numeric" }
-                    )}
+                    {formatDate(article.published_at, locale)}
                   </time>
                 </Link>
               </li>

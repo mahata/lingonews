@@ -1,4 +1,4 @@
-import { CopilotClient, approveAll } from "@github/copilot-sdk";
+import { readStdin, parseTimeoutMs, extractJson, runCopilotSession } from "./lib/copilot_helpers";
 
 const BASE_SYSTEM_PROMPT = `You are a bilingual news summarizer. You receive a Japanese news article and produce a structured bilingual (English/Japanese) summary.
 
@@ -24,6 +24,12 @@ const RESEARCH_ADDENDUM = `
 
 Additional context from web research has been provided alongside the article. Incorporate relevant findings from the research to produce a richer, more informed summary. Prioritize the original article's content but enhance it with background, context, and related developments from the research.`;
 
+interface SummaryOutput {
+  title_en: string;
+  title_ja: string;
+  sentences: Array<{ body_en: string; body_ja: string }>;
+}
+
 async function main(): Promise<void> {
   const title = process.argv[2];
   if (!title) {
@@ -32,88 +38,34 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const chunks: Buffer[] = [];
-  for await (const chunk of process.stdin) {
-    chunks.push(chunk);
-  }
-  const articleText = Buffer.concat(chunks).toString("utf-8").trim();
-
+  const articleText = await readStdin();
   if (!articleText) {
     console.error("Error: No article text provided on stdin.");
     process.exit(1);
   }
-
-  const client = new CopilotClient();
 
   const researchContext = process.env.RESEARCH_CONTEXT || "";
   const systemPrompt = researchContext
     ? BASE_SYSTEM_PROMPT + RESEARCH_ADDENDUM
     : BASE_SYSTEM_PROMPT;
 
-  try {
-    await client.start();
-
-    const session = await client.createSession({
-      onPermissionRequest: approveAll,
-      systemMessage: { content: systemPrompt },
-    });
-
-    let fullResponse = "";
-
-    const done = new Promise<void>((resolve, reject) => {
-      const defaultTimeoutMs = 300000;
-      const parsed = parseInt(process.env.SUMMARIZE_TIMEOUT_MS || "", 10);
-      const timeoutMs = Number.isFinite(parsed) && parsed > 0 ? parsed : defaultTimeoutMs;
-      const timeout = setTimeout(() => {
-        reject(new Error(`Copilot SDK session timed out after ${timeoutMs / 1000} seconds`));
-      }, timeoutMs);
-
-      session.on("assistant.message", (event) => {
-        fullResponse += event.data.content;
-      });
-
-      session.on("session.idle", () => {
-        clearTimeout(timeout);
-        resolve();
-      });
-    });
-
-    let prompt = `Here is a Japanese news article. Title: "${title}"\n\nArticle text:\n${articleText}`;
-    if (researchContext) {
-      prompt += `\n\nWeb research findings:\n${researchContext}`;
-    }
-    prompt += `\n\nPlease produce the bilingual summary JSON.`;
-
-    await session.send({ prompt });
-    await done;
-    await session.disconnect();
-
-    // Extract JSON from response (handle potential markdown fences)
-    let jsonStr = fullResponse.trim();
-    const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (fenceMatch) {
-      jsonStr = fenceMatch[1].trim();
-    }
-
-    // Strip any text outside the JSON object (e.g., LLM preamble/postamble)
-    const firstBrace = jsonStr.indexOf("{");
-    const lastBrace = jsonStr.lastIndexOf("}");
-    if (firstBrace !== -1 && lastBrace > firstBrace) {
-      jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
-    }
-
-    // Validate it's parseable JSON
-    const parsed = JSON.parse(jsonStr);
-    if (!parsed.title_en || !parsed.title_ja || !Array.isArray(parsed.sentences)) {
-      console.error("Raw LLM response:", fullResponse);
-      throw new Error("Invalid response structure: missing title_en, title_ja, or sentences");
-    }
-
-    // Output clean JSON to stdout
-    console.log(JSON.stringify(parsed));
-  } finally {
-    await client.stop();
+  let prompt = `Here is a Japanese news article. Title: "${title}"\n\nArticle text:\n${articleText}`;
+  if (researchContext) {
+    prompt += `\n\nWeb research findings:\n${researchContext}`;
   }
+  prompt += `\n\nPlease produce the bilingual summary JSON.`;
+
+  const timeoutMs = parseTimeoutMs(process.env.SUMMARIZE_TIMEOUT_MS);
+
+  const rawResponse = await runCopilotSession({ systemMessage: systemPrompt, prompt, timeoutMs });
+
+  const parsed = extractJson(rawResponse) as SummaryOutput;
+  if (!parsed.title_en || !parsed.title_ja || !Array.isArray(parsed.sentences)) {
+    console.error("Raw LLM response:", rawResponse);
+    throw new Error("Invalid response structure: missing title_en, title_ja, or sentences");
+  }
+
+  console.log(JSON.stringify(parsed));
 }
 
 main().catch((err) => {

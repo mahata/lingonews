@@ -17,3 +17,10 @@ export interface Sentence {
   body_en: string;
   body_ja: string;
 }
+
+export function formatDate(dateString: string, locale: Locale): string {
+  return new Date(dateString).toLocaleDateString(
+    locale === "en" ? "en-US" : "ja-JP",
+    { year: "numeric", month: "long", day: "numeric" }
+  );
+}
