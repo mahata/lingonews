@@ -10,7 +10,7 @@ module Api
     def show
       article = Article.includes(:sentences).find(params[:id])
       render json: article.as_json(
-        only: [ :id, :title_en, :title_ja, :published_at ],
+        only: [ :id, :title_en, :title_ja, :published_at, :source_url, :source ],
         include: {
           sentences: {
             only: [ :id, :position, :body_en, :body_ja ]
