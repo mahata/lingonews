@@ -2,8 +2,8 @@
 
 module News
   class Updater
-    MAX_CONCURRENCY = 4
-    MAX_RESEARCH_CONCURRENCY = 2
+    MAX_CONCURRENCY = 1
+    MAX_RESEARCH_CONCURRENCY = 1
 
     def self.call(sources: News::Sources.all, limit: nil)
       new(sources:, limit:).call

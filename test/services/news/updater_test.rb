@@ -148,20 +148,16 @@ class News::UpdaterTest < ActiveSupport::TestCase
     assert_equal "Source B", article_b.source
   end
 
-  test "processes articles concurrently" do
+  test "processes articles sequentially" do
     items = 6.times.map do |i|
       { title: "Article #{i}", url: "https://example.com/art#{i}", published_at: Time.current }
     end
 
     mutex = Mutex.new
     thread_ids = Set.new
-    arrived = Queue.new
-    gate = Queue.new
 
     article_fetcher = ->(_url) {
       mutex.synchronize { thread_ids << Thread.current.object_id }
-      arrived << true
-      gate.pop
       "Some text"
     }
 
@@ -170,11 +166,6 @@ class News::UpdaterTest < ActiveSupport::TestCase
       title_ja: "要約",
       sentences: [ { body_en: "Text.", body_ja: "テキスト。" } ]
     }
-
-    release_thread = Thread.new do
-      News::Updater::MAX_CONCURRENCY.times { arrived.pop }
-      items.size.times { gate << true }
-    end
 
     News::RssFetcher.stub :call, items do
       News::ArticleFetcher.stub :call, article_fetcher do
@@ -188,9 +179,7 @@ class News::UpdaterTest < ActiveSupport::TestCase
       end
     end
 
-    release_thread.join(5)
-
-    assert_operator thread_ids.size, :>, 1, "Expected multiple threads to be used"
+    assert_equal 1, thread_ids.size, "Expected a single worker thread"
   end
 
   test "falls back to no research context when TopicResearcher fails" do
