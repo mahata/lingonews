@@ -26,7 +26,7 @@
     "@types/node": "^22.19.17",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
-    "lefthook": "^2.1.10",
+    "lefthook": "^2.2.1",
     "typescript": "^6.0.3"
   }
 }
