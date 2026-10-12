@@ -13,7 +13,7 @@
   "dependencies": {
     "@github/copilot-sdk": "^0.3.0",
     "esbuild": "^0.28.2",
-    "react": "^19.2.5",
+    "react": "^19.3.0",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4",
     "tsx": "^4.23.13"
@@ -24,7 +24,7 @@
     "@capacitor/core": "^8.5.1",
     "@capacitor/ios": "^8.5.1",
     "@types/node": "^22.19.17",
-    "@types/react": "^19.2.18",
+    "@types/react": "^19.3.0",
     "@types/react-dom": "^19.2.5",
     "lefthook": "^2.1.10",
     "typescript": "^6.0.3"
